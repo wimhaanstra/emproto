@@ -1,0 +1,19 @@
+{
+  "name": "emproto",
+  "version": "1.0.0",
+  "description": "EM Protocol Handler",
+  "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./types": "./util/types.ts"
+  },
+  "scripts": {
+    "clitest": "npx tsx clitest/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "johnwoo-nl",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^20.14.10"
+  }
+}

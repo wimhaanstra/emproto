@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "types": [
+      "node",
+    ],
+    "target": "ES6",
+    "lib": ["ES6"],
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  },
+  "exclude": ["node_modules"]
+}
