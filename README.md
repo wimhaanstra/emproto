@@ -131,7 +131,7 @@ await evse.login("123456");
 Once logged in, the EVSE will start sending us info about its lines (aka plugs, connectors).
 Theoretically, an EVSE could have multiple lines, but in practice all EVSEs supported by the
 OEM app seem to have just one line (suggested by the fact that the OEM app uses hardcoded
-value 1 for `lineId` in various places). In any case, the EVSE will not have any inbformation
+value 1 for `lineId` in various places). In any case, the EVSE will not have any information
 about its lines until the library logs in. After logging in, it can take a few seconds before
 the first update arrives, and the lines array will be updated about once every 5-10 seconds.
 The library checks incoming info against the current state it has, and if anything changed,
