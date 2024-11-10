@@ -259,11 +259,13 @@ await evse.chargeStop({ userId: "John Doe" });
 
 ## CLI test runner
 
-Run the CLI runner from the library root like this:
+The CLI runner is also written in Typescript, so a plain nodejs runtime will not be able to run it directly.
+You can run it like this:
+
 ```bash
 npx tsx clitest
 ```
-This will discover EVSEs on the network and print some info. Press Ctrl+C to exit.
+This will discover EVSEs on the network and print some info as changes are detected. Press Ctrl+C to exit.
 
 Add `dump` (to any command) to dump incoming and outgoing datagrams (note: once logged in, you'll get more info but the EVSE's password will be present in the dumped datagrams, so don't copy-paste them to the internet).
 
