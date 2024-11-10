@@ -1,0 +1,60 @@
+import EmDatagram from "../EmDatagram.ts";
+import { SetAndGetNickNameAction } from "../../../util/types.ts";
+import { readString } from "../../../util/util.ts";
+
+class SetAndGetNickNameAbstract extends EmDatagram {
+    private action: SetAndGetNickNameAction = SetAndGetNickNameAction.GET;    // u8
+    private nickName: string; // 32 bytes
+
+    public getAction(): SetAndGetNickNameAction {
+        return this.action;
+    }
+
+    public setAction(action: SetAndGetNickNameAction): this {
+        this.action = action;
+        return this;
+    }
+
+    public getNickName(): string {
+        return this.nickName;
+    }
+
+    public setNickName(nickname: string): this {
+        this.nickName = nickname;
+        return this;
+    }
+
+    protected packPayload(): Buffer {
+        if (this.action !== SetAndGetNickNameAction.GET && this.action !== SetAndGetNickNameAction.SET) {
+            throw new Error("Invalid action, must be GET or SET");
+        }
+
+        if (this.action === SetAndGetNickNameAction.SET && !this.nickName) {
+            throw new Error("Nickname is required for SET action");
+        }
+
+        const buffer = Buffer.alloc(33);
+        buffer.writeUInt8(this.action, 0);
+        if (this.action === SetAndGetNickNameAction.SET) {
+            buffer.write(this.nickName, 1, 32, "binary");
+        }
+        return buffer;
+    }
+
+    protected unpackPayload(buffer: Buffer) {
+        if (buffer.length < 17) {
+            throw new Error("Invalid payload; too short");
+        }
+
+        this.action = SetAndGetNickNameAction[String(buffer.readUInt8(0))] || SetAndGetNickNameAction.UNKNOWN;
+        this.nickName = readString(buffer, 1, buffer.length >= 33 ? 33 : 17);
+    }
+}
+
+export class SetAndGetNickName extends SetAndGetNickNameAbstract {
+    public static readonly COMMAND = 33032;
+}
+
+export class SetAndGetNickNameResponse extends SetAndGetNickNameAbstract {
+    public static readonly COMMAND = 264;
+}
