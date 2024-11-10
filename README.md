@@ -206,7 +206,7 @@ await evse.setLanguage("ENGLISH");
 #### Starting a charging session
 
 ```typescript
-import { EmChargeStartOptions } from "emproto/types";
+import { ChargeStartParams } from "emproto/types";
 
 // Start a charging session using 6 amps on each phase. The maxAmps field is required.
 // It is strongly suggested that your app defaults this value to the maxElectricity
