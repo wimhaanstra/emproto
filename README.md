@@ -35,8 +35,8 @@ import { createCommunicator } from "emproto";
 const communicator = createCommunicator();
 
 // Listen for events.
-communicator.addEventListener(["added", "changed", "removed"], (evse, evt) => {
-    // EVSE was added, changed or removed (event in `evt` parameter).
+communicator.addEventListener(["added", "changed", "removed"], (evse, event) => {
+    // EVSE was added, changed or removed (event in second parameter).
     // Maybe your app wants to update its UI or perform some action now.
     // You could also register separate listeners for separate events. 
 });
