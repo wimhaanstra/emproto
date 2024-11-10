@@ -260,7 +260,7 @@ await evse.chargeStop({ userId: "John Doe" });
 ## CLI test runner
 
 The CLI runner is also written in Typescript, so a plain nodejs runtime will not be able to run it directly.
-You can run it like this:
+You can run it from the emproto root like this:
 
 ```bash
 npx tsx clitest
