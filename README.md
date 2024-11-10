@@ -280,7 +280,7 @@ To show info of a specific EVSE, use the same type of filter as for login:
 npx tsx clitest EC311S
 ```
 
-To start a session, use the start=<amps> command, specifying the maximum amperage to use. You can specify a filter to run the command on a specific EVSE; otherwise the first online EVSE that the CLI runner can login to will be used.
+To start a session, use the `start=<amps>` command, specifying the maximum amperage to use. You can specify a filter to run the command on a specific EVSE; otherwise the first online EVSE that the CLI runner can login to will be used.
 ```bash
 npx tsx clitest start=6
 
@@ -289,7 +289,7 @@ npx tsx clitest start=6
 npx tsx clitest EC311S start=6
 ```
 
-To stop a session, use the stop command. You can again specify a filter to target a specific EVSE (instead of using the first available online one).
+To stop a session, use the `stop` command. You can again specify a filter to target a specific EVSE (instead of using the first available online one).
 ```bash
 npx tsx clitest stop
 ```
