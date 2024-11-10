@@ -1,6 +1,6 @@
 import EmDatagram from "../EmDatagram.ts";
-import { OffLineChargeAction, type OffLineChargeStatus, OffLineChargeStatusMapping } from "../../../util/types.ts";
-import { enumStr } from "../../../util/util.ts";
+import { OffLineChargeAction, type OffLineChargeStatus, OffLineChargeStatusMapping } from "util/types.ts";
+import { enumStr } from "util/util.ts";
 
 abstract class SetAndGetOffLineChargeAbstract extends EmDatagram {
     private status: OffLineChargeStatusMapping;
