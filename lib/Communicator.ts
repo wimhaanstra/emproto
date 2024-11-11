@@ -389,6 +389,9 @@ class Communicator {
     private checkSessionTimeouts() {
         if (!this.isRunning()) return;
         this.evses.forEach(evse => {
+            if (evse.updateOnlineStatus()) {
+                this.dispatchEvent("changed", evse);
+            }
             if (!evse.isLoggedIn() && evse.hasPassword()) {
                 evse.login().then();
             }
