@@ -1,6 +1,6 @@
-import Communicator from "../lib/Communicator";
-import { EmEvse } from "../util/types";
-import {logError, logInfo, logSuccess} from "../util/util";
+import Communicator from "lib/Communicator.ts";
+import { EmEvse } from "util/types.ts";
+import { logError, logInfo, logSuccess } from "util/util.ts";
 
 const evsesFile = '~/evses.json';
 
