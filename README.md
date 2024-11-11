@@ -1,8 +1,19 @@
 # EM Protocol Handler
 
-Communicates with wallboxes ("EVSEs") using the EvseMaster app: Besen, Telestar, evseODM, ...
+Typescript node library to communicate with wallboxes ("EVSEs") using the "EVSEMaster" app: Besen, Telestar, evseODM, Morec, Deltaco, ...
 
-This library also includes a small [CLI test runner](#cli-test-runner) which you may use to read info from and control EVSEs. 
+This library also includes a small [CLI test runner](#cli-test-runner) which you may use to read info from and control EVSEs.
+
+The library was developed and tested using a Telestar EC311S. Since the other brands use the same app, it may work with them as well,
+although there seem to be some subtle differences in supported datagrams and their formats/lengths. Use at your own risk. If something
+doesn't work, please set the `dumpDatagrams` option in the communicator start parameters to true in order to see what data is received;
+this may help in debugging.
+
+This library doesn't do any bluetooth; it is assumed that you have setup a WiFi connection on your wallbox using the OEM app, and is
+reachable from the host where you run the library (broadcast packets from the wallbox should also be available to the library; if you have
+placed your wallbox in a separate network or VLAN, take the broadcast into account when setting up routing). While  the Telestar EC311S
+insists on reconnecting via bluetooth regularly, that seems to be an app issue; the wallbox does in fact remain fully reachable over WiFi
+once the WiFi connection is correctly configured.
 
 ## Installation
 
