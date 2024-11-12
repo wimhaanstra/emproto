@@ -1,6 +1,6 @@
 # EM Protocol Handler
 
-Typescript node library to communicate with wallboxes ("EVSEs") using the "EVSEMaster" app: Besen, Telestar, evseODM, Morec, Deltaco, ...
+Typescript node library to communicate with wallboxes (aka [EVSEs](https://en.wikipedia.org/wiki/EVSE)) using the "EVSEMaster" app: Besen, Telestar, evseODM, Morec, Deltaco, ...
 
 This library also includes a small [CLI test runner](#cli-test-runner) which you may use to read info from and control EVSEs.
 
