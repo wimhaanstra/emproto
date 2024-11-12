@@ -16,7 +16,7 @@ export interface EmEvse {
      * Get live configuration from the EVSE. The EVSE needs to be online and logged in for this.
      * This method is called automatically immediately after a successful login.
      */
-    getLiveConfig(): Promise<EmEvseConfig>;
+    fetchConfig(): Promise<EmEvseConfig>;
 
     /**
      * Get the last time a datagram was received from the EVSE.

@@ -6,14 +6,15 @@ This library also includes a small [CLI test runner](#cli-test-runner) which you
 
 The library was developed and tested using a Telestar EC311S. Since the other brands use the same app, it may work with them as well,
 although there seem to be some subtle differences in supported datagrams and their formats/lengths. Use at your own risk. If something
-doesn't work, please set the `dumpDatagrams` option in the communicator start parameters to true in order to see what data is received;
+doesn't work, please set `dumpDatagrams: true` in the communicator constructor `config` parameter in order to see what data is received;
 this may help in debugging.
 
-This library doesn't do any bluetooth; it is assumed that you have setup a WiFi connection on your wallbox using the OEM app, and is
-reachable from the host where you run the library (broadcast packets from the wallbox should also be available to the library; if you have
-placed your wallbox in a separate network or VLAN, take the broadcast into account when setting up routing). While  the Telestar EC311S
-insists on reconnecting via bluetooth regularly, that seems to be an app issue; the wallbox does in fact remain fully reachable over WiFi
-once the WiFi connection is correctly configured.
+This library doesn't do any bluetooth; it is assumed that you have setup a WiFi connection on your wallbox using the OEM app, and it is
+reachable from the host where you run the library. Broadcast UDP packets from the wallbox should also be available to the library; if you
+have placed your wallbox in a separate network or VLAN, or run the library in a docker container with network separation, then ensure
+broadcast datagrams from the wallbox are routed to the library.
+While the OEM app insists on reconnecting via bluetooth regularly, that seems to be an app issue; the wallbox does in fact remain fully
+functional on the network once the WiFi connection is correctly configured.
 
 ## Installation
 
@@ -26,7 +27,7 @@ git clone https://github.com/johnwoo-nl/emproto.git
 # Navigate to your own project.
 cd my-project
 
-# Add a filesystem dependency to the cloned repository.
+# Add a filesystem dependency to the library project directory.
 npm i ../emproto
 ```
 
@@ -37,7 +38,9 @@ npm i ../emproto
 
 ## Library usage
 
-### Communicator usage
+### Communicator class
+
+The `Communicator` class is the entry point to the library, keeping track of EVSE instances and communicating over the network.
 
 ```typescript
 import { createCommunicator } from "emproto";
@@ -87,7 +90,10 @@ communicator.stop();
 communicator.saveEvses("~/evses.json");
 ```
 
-### EVSE usage
+### EVSE class
+
+The `Evse` class represents a single wallbox and exposes the functionality to read and interact with it.
+You can obtain `Evse` class instances from the `Communicator`.
 
 #### Getting EVSE info and configuration
 
@@ -186,19 +192,21 @@ console.log(`Name: ${config.name}`);
 // However, immediately after logging in, the communicator is still working to get the
 // config, and not all fields may be set. Or, if the communicator logged in to the EVSE
 // before, there may be a stale value. If you want to be certain that you have the
-// current, live config, use getLiveConfig. This method returns a promise that will
+// current, live config, use fetchConfig. This method returns a promise that will
 // resolve with the config once it's available. You can call this method right after
 // login() returns (it will recycle the same promise if the config is already being
-// fetched).
-const liveConfig = await evse.getLiveConfig();
-console.log(`Name: ${config.name}`);
+// fetched). By default, an existing config is returned without going to the wallbox
+// if it was just fetched (within the last 5 seconds). This max-age (in seconds) can
+// be specified as an argument to fetchConfig.
+const freshConfig = await evse.fetchConfig();
+console.log(`Name: ${freshConfig.name}`);
 
 // You can also just call getLiveConfig without using its return value to trigger an
 // update. Any changes in config will also result in a "changed" event for the EVSE.
 // This is useful if you wish to add some "Refresh" button to your app's UI of the
 // EVSE's configuration and your UI is driven by these events. The communicator
-// currently only does it right after login.
-evse.getLiveConfig().then();
+// currently does this right after login.
+evse.fetchConfig(0).then();
 ```
 
 #### Changing configuration

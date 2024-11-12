@@ -142,9 +142,9 @@ export function parseErrorState(errorState: number): EmEvseErrorState[] {
     return states;
 }
 
-function nowStr() {
+export function nowStr() {
     const now = new Date();
-    return `${now.getHours()}:${now.getMinutes() < 10 ? '0' : ''}${now.getMinutes()}:${now.getSeconds() < 10 ? '0' : ''}${now.getSeconds()}`;
+    return `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()} ${now.getHours()}:${('0' + now.getMinutes()).slice(-2)}:${('0' + now.getSeconds()).slice(-2)}`;
 }
 
 export function logInfo(msg: string) {

@@ -437,14 +437,25 @@ export default class Evse implements EmEvse {
         // 5. Mark this evse as having an active session.
         this.lastActiveLogin = new Date();
         // 6. Request EVSE's configuration. We don't need to wait for this; the login is complete.
-        this.getLiveConfig().catch(error => {
+        this.fetchConfig().catch(error => {
             logError(`Failed to get configuration for ${this.info.serial} after login: ${error.message}`);
         });
     }
 
-    public async getLiveConfig(): Promise<EmEvseConfig> {
+    /**
+     * Fetch current configuration from EVSE. The EVSE needs to be online and logged in for this.
+     * Optionally, if the configuration was fetched recently (within orCachedUntilSeconds), the currently known
+     * configuration is returned without fetching it again.
+     * @param orCachedUntilSeconds If the configuration was recently fetched (within the last specified
+     *                             number of seconds), then return the current config without fetching
+     *                             from the EVSE again.
+     */
+    public async fetchConfig(orCachedUntilSeconds: number = 5): Promise<EmEvseConfig> {
         // If we're already busy getting the configuration, then recycle that promise.
         if (this.configUpdatePromise === undefined) {
+            if (this.lastConfigUpdate && this.lastConfigUpdate.getTime() > (Date.now() - (orCachedUntilSeconds * 1000))) {
+                return this.config;
+            }
             // Set up the receivers for the configuration datagrams. We do this before sending out the
             // requests to avoid missing any responses for earlier requests while we're still busy
             // sending out the later requests.

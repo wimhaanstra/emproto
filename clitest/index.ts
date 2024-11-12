@@ -1,6 +1,6 @@
 import Communicator from "lib/Communicator.ts";
 import { EmEvse } from "util/types.ts";
-import { logError, logInfo, logSuccess } from "util/util.ts";
+import {logError, logInfo, logSuccess, nowStr} from "util/util.ts";
 
 const evsesFile = '~/evses.json';
 
@@ -87,10 +87,10 @@ function evseMatches(evse: EmEvse) {
     communicator.addEventListener(["added", "removed", "changed"], async (evse, evt) => {
         if (evseKeyword && !evseMatches(evse)) return;
 
-        process.stdout.write(`⚡ ${evt} ${evse.toString()}\n`);
+        process.stdout.write(`[${nowStr()}] ⚡ ${evt} ${evse.toString()}\n`);
         if (evt === 'removed') return;
         evse.getLines().forEach(line => {
-            process.stdout.write(`  🔌 ${JSON.stringify(line)}\n`);
+            process.stdout.write(`[${nowStr()}]   🔌 ${JSON.stringify(line)}\n`);
         });
 
         if (evseMatches(evse)) {
