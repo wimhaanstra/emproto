@@ -1,6 +1,6 @@
-import EmDatagram from "../EmDatagram.ts";
-import { SetAndGetNickNameAction } from "../../../util/types.ts";
-import { readString } from "../../../util/util.ts";
+import EmDatagram from "../EmDatagram.js";
+import { SetAndGetNickNameAction } from "../../util/types.js";
+import { readString } from "../../util/util.js";
 
 class SetAndGetNickNameAbstract extends EmDatagram {
     private action: SetAndGetNickNameAction = SetAndGetNickNameAction.GET;    // u8

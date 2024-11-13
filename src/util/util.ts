@@ -1,4 +1,4 @@
-import { EmEvseErrorState } from "./types.ts";
+import { EmEvseErrorState } from "./types.js";
 
 /**
  * Encode a password to a base64 string with some slight obfuscation.

@@ -1,5 +1,5 @@
-import EmDatagram from "../EmDatagram.ts";
-import { readString } from "util/util.ts";
+import EmDatagram from "../EmDatagram.js";
+import { readString } from "../../util/util.js";
 
 class GetVersionAbstract extends EmDatagram {
     private hardwareVersion: string;

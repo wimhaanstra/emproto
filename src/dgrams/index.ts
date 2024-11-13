@@ -1,27 +1,27 @@
 import { Buffer } from "node:buffer";
-import EmDatagram from "./EmDatagram.ts";
-import NotEmDatagramError from "./NotEmDatagramError.ts";
+import EmDatagram from "./EmDatagram.js";
+import NotEmDatagramError from "./NotEmDatagramError.js";
 
-import { Login, LoginResponse, RequestLogin, LoginConfirm } from "./impl/Login.ts";
-import { Heading, HeadingResponse } from "./impl/Heading.ts";
-import { PasswordErrorResponse } from "./impl/PasswordErrorResponse.ts";
-import { SingleACStatus, SingleACStatusResponse } from "./impl/SingleACStatus.ts";
-import { ChargeStart, ChargeStartResponse } from "./impl/ChargeStart.ts";
-import { ChargeStop, ChargeStopResponse } from "./impl/ChargeStop.ts";
-import { SetAndGetAlarmChargeStrategyResponse } from "./impl/SetAndGetAlarmChargeStrategyResponse.ts";
-import { SettingSystemTime } from "./impl/SystemTime.ts";
-import { SingleACChargingStatusPublicAuto } from "./impl/SingleACChargingStatusPublicAuto.ts";
-import { RequestStatusRecord } from "./impl/RequestStatusRecord.ts";
-import { SingleACChargingStatusResponse } from "./impl/SingleACChargingStatusResponse.ts";
-import { SetAndGetChargeFeeResponse } from "./impl/SetAndGetChargeFeeResponse.ts";
-import { SetAndGetServiceFeeResponse } from "./impl/SetAndGetServiceFeeResponse.ts";
-import { SetAndGetNickName, SetAndGetNickNameResponse } from "./impl/SetAndGetNickName.ts";
-import { SetAndGetTemperatureUnit, SetAndGetTemperatureUnitResponse } from "./impl/SetAndGetTemperatureUnit.ts";
-import { SetAndGetOutputElectricity, SetAndGetOutputElectricityResponse } from "./impl/SetAndGetOutputElectricity.ts";
-import { SetAndGetOffLineCharge, SetAndGetOffLineChargeResponse } from "./impl/SetAndGetOffLineCharge.ts";
-import { SetAndGetLanguage, SetAndGetLanguageResponse } from "./impl/SetAndGetLanguage.ts";
-import { GetVersion, GetVersionResponse } from "./impl/GetVersion.ts";
-import { UploadLocalChargeRecord } from "./impl/UploadLocalChargeRecord.ts";
+import { Login, LoginResponse, RequestLogin, LoginConfirm } from "./impl/Login.js";
+import { Heading, HeadingResponse } from "./impl/Heading.js";
+import { PasswordErrorResponse } from "./impl/PasswordErrorResponse.js";
+import { SingleACStatus, SingleACStatusResponse } from "./impl/SingleACStatus.js";
+import { ChargeStart, ChargeStartResponse } from "./impl/ChargeStart.js";
+import { ChargeStop, ChargeStopResponse } from "./impl/ChargeStop.js";
+import { SetAndGetAlarmChargeStrategyResponse } from "./impl/SetAndGetAlarmChargeStrategyResponse.js";
+import { SettingSystemTime } from "./impl/SystemTime.js";
+import { SingleACChargingStatusPublicAuto } from "./impl/SingleACChargingStatusPublicAuto.js";
+import { RequestStatusRecord } from "./impl/RequestStatusRecord.js";
+import { SingleACChargingStatusResponse } from "./impl/SingleACChargingStatusResponse.js";
+import { SetAndGetChargeFeeResponse } from "./impl/SetAndGetChargeFeeResponse.js";
+import { SetAndGetServiceFeeResponse } from "./impl/SetAndGetServiceFeeResponse.js";
+import { SetAndGetNickName, SetAndGetNickNameResponse } from "./impl/SetAndGetNickName.js";
+import { SetAndGetTemperatureUnit, SetAndGetTemperatureUnitResponse } from "./impl/SetAndGetTemperatureUnit.js";
+import { SetAndGetOutputElectricity, SetAndGetOutputElectricityResponse } from "./impl/SetAndGetOutputElectricity.js";
+import { SetAndGetOffLineCharge, SetAndGetOffLineChargeResponse } from "./impl/SetAndGetOffLineCharge.js";
+import { SetAndGetLanguage, SetAndGetLanguageResponse } from "./impl/SetAndGetLanguage.js";
+import { GetVersion, GetVersionResponse } from "./impl/GetVersion.js";
+import { UploadLocalChargeRecord } from "./impl/UploadLocalChargeRecord.js";
 
 // Register implementations here.
 const emDatagramTypes = [

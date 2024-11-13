@@ -1,5 +1,5 @@
-import EmDatagram from "../EmDatagram.ts";
-import { SetAndGetOutputElectricityAction } from "util/types.ts";
+import EmDatagram from "../EmDatagram.js";
+import { SetAndGetOutputElectricityAction } from "../../util/types.js";
 
 abstract class SetAndGetOutputElectricityAbstract extends EmDatagram {
     private action: SetAndGetOutputElectricityAction;    // u8

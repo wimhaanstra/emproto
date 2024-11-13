@@ -1,7 +1,7 @@
-import EmDatagram from "../EmDatagram.ts";
+import EmDatagram from "../EmDatagram.js";
 import { Buffer } from "node:buffer";
-import { EmEvseCurrentState, EmEvseErrorState, EmEvseGunState, EmEvseOutputState } from "util/types.ts";
-import { parseErrorState } from "util/util.ts";
+import { EmEvseCurrentState, EmEvseErrorState, EmEvseGunState, EmEvseOutputState } from "../../util/types.js";
+import { parseErrorState } from "../../util/util.js";
 
 export class SingleACStatus extends EmDatagram {
     public static readonly COMMAND = 0x0004;

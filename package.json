@@ -1,19 +1,25 @@
 {
   "name": "emproto",
-  "version": "1.0.0",
+  "version": "1.0.0-alpha",
   "description": "EM Protocol Handler",
   "type": "module",
   "exports": {
-    ".": "./index.ts",
-    "./types": "./util/types.ts"
+    ".": "./dist/index.js",
+    "./types": "./dist/util/types.js"
   },
   "scripts": {
-    "clitest": "npx tsx clitest/index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "rm -rf ./dist && tsc",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "clean": "rm -rf ./dist",
+    "clitest": "npx tsx clitest/index.ts"
   },
+  "build": "tsc",
   "author": "johnwoo-nl",
   "license": "MIT",
   "dependencies": {
-    "@types/node": "^20.14.10"
+    "@types/node": "^20.17.6"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
   }
 }

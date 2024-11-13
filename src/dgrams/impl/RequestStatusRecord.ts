@@ -1,4 +1,4 @@
-import EmDatagram from "../EmDatagram.ts";
+import EmDatagram from "../EmDatagram.js";
 import { Buffer } from "node:buffer";
 
 export class RequestStatusRecord extends EmDatagram {

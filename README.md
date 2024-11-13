@@ -24,17 +24,53 @@ There is no npm package yet; for now, you can use the protocol handler library b
 # Clone repository to local directory.
 git clone https://github.com/johnwoo-nl/emproto.git
 
-# Navigate to your own project.
-cd my-project
+# Build the library.
+cd emproto
+npm install && npm run build
 
-# Add a filesystem dependency to the library project directory.
-npm i ../emproto
+# In your own project, add a filesystem dependency to the library project directory.
+cd ../my-project
+npm install ../emproto
 ```
+
+Example of a basic app using the library with only a single file, `index.js` (that would go directly in your `my-project` directory as referenced in the above installation):
+
+```javascript
+import { createCommunicator } from "emproto";
+const evsesFile = '~/evses.json';
+(async function() {
+    const communicator = createCommunicator();
+    communicator.loadEvses(evsesFile);
+    await communicator.start();
+
+    communicator.addEventListener(["added", "changed", "removed"], (evse, event) => {
+        console.log(`${event} ${evse.toString()}`);
+        for (const [, line] of evse.getLines()) {
+            console.log(`  ${JSON.stringify(line)}`);
+        }
+    });
+
+    process.on('SIGINT', () => {
+        communicator.stop();
+        communicator.saveEvses(evsesFile);
+        process.exit();
+    });
+})();
+```
+
+Run your app from a terminal in `my-project`:
+```bash
+node index.js
+```
+
+Use Ctrl+C to exit your app.
+This example app doesn't login to any wallboxes so it'll show only basic info (no lines info), unless another app has saved the password to `~/evses.json`.
+Read on to see how to login and get more info from a wallbox, and how to control it.
 
 ## Requirements
 
 - Nodejs 20.14.10 or newer.
-- Build toolchain or runtime supporting Typescript and ES6 modules.
+- Build toolchain or runtime supporting ES6 modules.
 
 ## Library usage
 

@@ -1,6 +1,6 @@
-import EmDatagram from "../EmDatagram.ts";
-import { type Language, LanguageMapping, SetAndGetLanguageAction } from "../../../util/types.ts";
-import { enumStr } from "../../../util/util.ts";
+import EmDatagram from "../EmDatagram.js";
+import { type Language, LanguageMapping, SetAndGetLanguageAction } from "../../util/types.js";
+import { enumStr } from "../../util/util.js";
 
 abstract class SetAndGetLanguageAbstract extends EmDatagram {
 

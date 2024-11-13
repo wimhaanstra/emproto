@@ -1,4 +1,4 @@
-import EmDatagram from "../EmDatagram.ts";
+import EmDatagram from "../EmDatagram.js";
 
 export class PasswordErrorResponse extends EmDatagram {
     public static readonly COMMAND = 341;

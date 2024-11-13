@@ -1,5 +1,5 @@
 import EmDatagram from "../EmDatagram.js";
-import {SystemTimeAction} from "util/types.js";
+import {SystemTimeAction} from "../../util/types.js";
 import {Buffer} from "node:buffer";
 
 abstract class SystemTimeAbstract extends EmDatagram {

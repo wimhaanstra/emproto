@@ -1,5 +1,5 @@
-import Evse from "../lib/Evse.ts";
-import EmDatagram from "../lib/dgrams/EmDatagram.ts";
+import Evse from "Evse.js";
+import EmDatagram from "dgrams/EmDatagram.js";
 
 export interface EmEvse {
     /**

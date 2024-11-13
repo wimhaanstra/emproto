@@ -1,21 +1,21 @@
 import { createSocket, Socket, RemoteInfo } from "node:dgram";
 import * as fs from "node:fs";
-import EmDatagram from "./dgrams/EmDatagram.ts";
-import Evse from "./Evse.ts";
-import { parseDatagrams } from "./dgrams/index.ts";
+import { Buffer } from "node:buffer";
+import { homedir } from "node:os";
+import { logError, logInfo, logWarning, dumpDebug } from "./util/util.js";
+import { parseDatagrams } from "./dgrams/index.js";
 import {
     DEFAULT_EM_COMMUNICATOR_CONFIG,
     EmCommunicatorConfig,
     EmEvseEvent,
     EmEvseEventHandler,
     EmEvseEvents
-} from "../util/types.ts";
-import { Buffer } from "node:buffer";
-import { homedir } from "node:os";
-import { Heading, HeadingResponse } from "./dgrams/impl/Heading.ts";
-import { Login } from "./dgrams/impl/Login.ts";
-import { logError, logInfo, logWarning, dumpDebug } from "../util/util.ts";
-import { SingleACStatus, SingleACStatusResponse } from "./dgrams/impl/SingleACStatus.ts";
+} from "./util/types.js";
+import Evse from "./Evse.js";
+import EmDatagram from "./dgrams/EmDatagram.js";
+import { Heading, HeadingResponse } from "./dgrams/impl/Heading.js";
+import { Login } from "./dgrams/impl/Login.js";
+import { SingleACStatus, SingleACStatusResponse } from "./dgrams/impl/SingleACStatus.js";
 
 type EmEvseEventListener = {
     types: EmEvseEvent[];

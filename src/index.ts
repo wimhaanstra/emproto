@@ -1,5 +1,5 @@
-import Communicator from "./lib/Communicator.ts";
-import { EmCommunicatorConfig } from "./util/types.ts";
+import Communicator from "./Communicator.js";
+import { EmCommunicatorConfig } from "./util/types.js";
 
 /**
  * Create a new communicator instance.

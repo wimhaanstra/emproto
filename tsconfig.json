@@ -1,15 +1,16 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
+    "baseUrl": "./src",
     "moduleResolution": "NodeNext",
-    "module": "ESNext",
+    "module": "NodeNext",
     "types": [
-      "node",
+      "node"
     ],
-    "target": "ES6",
-    "lib": ["ES6"],
-    "allowImportingTsExtensions": true,
-    "noEmit": true
+    "declaration": true,
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "outDir": "dist"
   },
-  "exclude": ["node_modules"]
+  "include": ["./package.json", "src/**/*"],
+  "exclude": ["node_modules"],
 }

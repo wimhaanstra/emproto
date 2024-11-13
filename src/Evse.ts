@@ -1,6 +1,6 @@
 import { clearTimeout } from "node:timers";
-import Communicator from "./Communicator.ts";
-import EmDatagram from "./dgrams/EmDatagram.ts";
+import Communicator from "./Communicator.js";
+import EmDatagram from "./dgrams/EmDatagram.js";
 import {
     type DispatchEvent,
     type EmEvseConfig,
@@ -21,20 +21,20 @@ import {
     ChargeStartResult,
     ChargeStopParams,
     ChargeStopResult
-} from "util/types.ts";
-import { decodePassword, encodePassword, logError, logWarning, toDate, update } from "util/util.ts";
-import { LoginAbstract, LoginConfirm, LoginResponse, RequestLogin } from "./dgrams/impl/Login.ts";
-import { SingleACStatus } from "./dgrams/impl/SingleACStatus.ts";
-import { SetAndGetNickName, SetAndGetNickNameResponse } from "./dgrams/impl/SetAndGetNickName.ts";
-import { SetAndGetTemperatureUnit, SetAndGetTemperatureUnitResponse } from "./dgrams/impl/SetAndGetTemperatureUnit.ts";
-import { SetAndGetOutputElectricity, SetAndGetOutputElectricityResponse } from "./dgrams/impl/SetAndGetOutputElectricity.ts";
-import { SetAndGetOffLineCharge, SetAndGetOffLineChargeResponse } from "./dgrams/impl/SetAndGetOffLineCharge.ts";
-import { SetAndGetLanguage, SetAndGetLanguageResponse } from "./dgrams/impl/SetAndGetLanguage.ts";
-import { GetVersion, GetVersionResponse } from "./dgrams/impl/GetVersion.ts";
-import { HeadingResponse } from "./dgrams/impl/Heading.ts";
-import { PasswordErrorResponse } from "./dgrams/impl/PasswordErrorResponse.ts";
-import { ChargeStart, ChargeStartResponse } from "./dgrams/impl/ChargeStart.ts";
-import { ChargeStop, ChargeStopResponse } from "./dgrams/impl/ChargeStop.ts";
+} from "./util/types.js";
+import {decodePassword, encodePassword, logError, logInfo, logWarning, toDate, update} from "./util/util.js";
+import { LoginAbstract, LoginConfirm, LoginResponse, RequestLogin } from "./dgrams/impl/Login.js";
+import { SingleACStatus } from "./dgrams/impl/SingleACStatus.js";
+import { SetAndGetNickName, SetAndGetNickNameResponse } from "./dgrams/impl/SetAndGetNickName.js";
+import { SetAndGetTemperatureUnit, SetAndGetTemperatureUnitResponse } from "./dgrams/impl/SetAndGetTemperatureUnit.js";
+import { SetAndGetOutputElectricity, SetAndGetOutputElectricityResponse } from "./dgrams/impl/SetAndGetOutputElectricity.js";
+import { SetAndGetOffLineCharge, SetAndGetOffLineChargeResponse } from "./dgrams/impl/SetAndGetOffLineCharge.js";
+import { SetAndGetLanguage, SetAndGetLanguageResponse } from "./dgrams/impl/SetAndGetLanguage.js";
+import { GetVersion, GetVersionResponse } from "./dgrams/impl/GetVersion.js";
+import { HeadingResponse } from "./dgrams/impl/Heading.js";
+import { PasswordErrorResponse } from "./dgrams/impl/PasswordErrorResponse.js";
+import { ChargeStart, ChargeStartResponse } from "./dgrams/impl/ChargeStart.js";
+import { ChargeStop, ChargeStopResponse } from "./dgrams/impl/ChargeStop.js";
 
 export default class Evse implements EmEvse {
 
@@ -489,6 +489,7 @@ export default class Evse implements EmEvse {
         // only mark the time that configuration was last updated, so we can know later on if we need
         // to refresh.
         this.lastConfigUpdate = new Date();
+        logInfo(`Fetched config for ${this.toString()}`);
         this.dispatchEvent("changed");
         return this.config;
     }
