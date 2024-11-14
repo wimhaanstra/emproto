@@ -195,9 +195,9 @@ export type ChargeStartParams = {
 
 export type ChargeStartResult = {
     lineId: number;
-    reservationResult: number;
+    reservationResult: ChargeStartReservationResult;
     startResult: number;
-    errorReason: number;
+    errorReason: ChargeStartErrorReason;
     maxElectricity: number;
 };
 
@@ -472,3 +472,30 @@ export enum LanguageMapping {
 export type Language = keyof typeof LanguageMapping;
 
 export type DispatchEvent = (event: EmEvseEvent, evse: Evse, datagram?: EmDatagram) => void;
+
+export enum ChargeStartErrorReason {
+    NO_ERROR = 0,
+    NOT_PLUGGED_IN = 1,
+    SYSTEM_ERROR = 2,
+    ALREADY_CHARGING = 3,
+    SYSTEM_MAINTENANCE = 4,
+    INCORRECT_FEE_SET = 5,
+    INCORRECT_POWER_SET = 6,
+    INCORRECT_TIME_SET = 7,
+    UNKNOWN_ERROR = 8,
+    RESERVATION_PENDING = 20
+}
+
+export enum ChargeStartReservationResult {
+    IMMEDIATE_START = 0,            // No reservation planned; start charging immediately.
+    RESERVATION_OK = 1,             // Reservation made successfully.
+    RESERVATION_NOT_SUPPORTED = 2,  // This wallbox does not support reservations. `ChargeStartParams.startAt` cannot be used.
+    RESERVATION_TOO_DISTANT = 3,    // Reservation failed; the start time is too far in the future (more than 24h).
+    RESERVATION_IN_PAST = 4,        // Reservation failed; the start time is in the past. The wallbox has started charging immediately.
+    SYSTEM_ERROR = 5,               // Reservation failed; system error.
+    RESERVATION_EXISTS = 6,         // Reservation failed; there is already a reservation planned.
+    ALREADY_CHARGING = 7,           // Reservation failed; the wallbox is already charging.
+    INCORRECT_FEE_SET = 8,          // Reservation failed; an incorrect fee has been set.
+    INCORRECT_POWER_SET = 9,        // Reservation failed; an incorrect power level has been set.
+    INCORRECT_TIME_SET = 10,        // Reservation failed; an incorrect time has been set.
+}

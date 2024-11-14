@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 import EmDatagram from "./EmDatagram.js";
-import NotEmDatagramError from "./NotEmDatagramError.js";
+import NotEmDatagramError from "../errors/NotEmDatagramError.js";
 
 import { Login, LoginResponse, RequestLogin, LoginConfirm } from "./impl/Login.js";
 import { Heading, HeadingResponse } from "./impl/Heading.js";

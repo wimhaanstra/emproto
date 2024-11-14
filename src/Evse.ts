@@ -35,6 +35,7 @@ import { HeadingResponse } from "./dgrams/impl/Heading.js";
 import { PasswordErrorResponse } from "./dgrams/impl/PasswordErrorResponse.js";
 import { ChargeStart, ChargeStartResponse } from "./dgrams/impl/ChargeStart.js";
 import { ChargeStop, ChargeStopResponse } from "./dgrams/impl/ChargeStop.js";
+import { ChargeStartError, successReservationResults } from "./errors/ChargeStartError.js";
 
 export default class Evse implements EmEvse {
 
@@ -655,9 +656,10 @@ export default class Evse implements EmEvse {
             throw new Error(`chargeStart expected lineId ${chargeStart.getLineId()} in response, got ${response.getLineId()}`);
         }
 
-        if (response.getErrorReason()) {
-            throw new Error(`chargeStart failed with reason ${response.getErrorReason()}`);
+        if (response.getErrorReason() || !successReservationResults.includes(response.getReservationResult())) {
+            throw new ChargeStartError(response);
         }
+
         return {
             lineId: response.getLineId(),
             reservationResult: response.getReservationResult(),

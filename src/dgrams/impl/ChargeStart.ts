@@ -1,4 +1,5 @@
 import EmDatagram from "../EmDatagram.js";
+import { ChargeStartErrorReason, ChargeStartReservationResult } from "../../util/types.js";
 
 function convertTimezone(date: Date, timeZone: string, timeZone2: string): Date {
     const time = date.getTime();
@@ -127,9 +128,9 @@ export class ChargeStartResponse extends EmDatagram {
     public static readonly COMMAND = 7;
 
     private lineId: number;
-    private reservationResult: number;
+    private reservationResult: ChargeStartReservationResult;
     private startResult: number;
-    private errorReason: number;
+    private errorReason: ChargeStartErrorReason;
     private maxElectricity: number;
 
     protected unpackPayload(buffer: Buffer): void {
@@ -138,9 +139,9 @@ export class ChargeStartResponse extends EmDatagram {
         }
 
         this.lineId = buffer.readUInt8(0);
-        this.reservationResult = buffer.readUInt8(1);
+        this.reservationResult = buffer.readUInt8(1) as ChargeStartReservationResult;
         this.startResult = buffer.readUInt8(2);
-        this.errorReason = buffer.readUInt8(3);
+        this.errorReason = buffer.readUInt8(3) as ChargeStartErrorReason;
         this.maxElectricity = buffer.readUInt8(4);
     }
 
@@ -153,7 +154,7 @@ export class ChargeStartResponse extends EmDatagram {
         return this.lineId;
     }
 
-    public getReservationResult(): number {
+    public getReservationResult(): ChargeStartReservationResult {
         return this.reservationResult;
     }
 
@@ -161,7 +162,7 @@ export class ChargeStartResponse extends EmDatagram {
         return this.startResult;
     }
 
-    public getErrorReason(): number {
+    public getErrorReason(): ChargeStartErrorReason {
         return this.errorReason;
     }
 
