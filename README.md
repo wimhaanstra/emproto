@@ -279,13 +279,13 @@ await evse.chargeStart({ maxAmps: 6, userId: "John Doe" });
 // You may also specify a custom identifier for the session, for example to correlate
 // the session stored on the EVSE with one stored in your app's database. Maximum
 // length is 16 ASCII characters.
-await evse.chargeStart({ maxAmps: 6, sessionId: "ABC123" });
+await evse.chargeStart({ maxAmps: 6, chargeId: "ABC123" });
 
 // You can delay-start a session by specifying a start time. If omitted or the time
 // is not in the future, charging will start immediately. Starting one hour from now:
 await evse.chargeStart({
     maxAmps: 6,
-    startTime: new Date(Date.now() + (3600 * 1000))
+    startAt: new Date(Date.now() + (3600 * 1000))
 });
 // Note: There is no way yet of inspecting whether a delayed session is planned.
 
@@ -296,12 +296,13 @@ await evse.chargeStart({
     maxDurationMinutes: 90,
     maxEnergyKWh: 7.5
 });
-// Note: There is no way yet of inspecting what the limits are for an ongoing session.
-//       For now, suggest that your app remembers it (possibly using the sessionId
-//       correlator which it can set itself at start time).
+// Note 1: There is no way yet of inspecting what the limits are for an ongoing session.
+//         For now, suggest that your app remembers it (possibly using the sessionId
+//         correlator which it can set itself at start time).
+// Note 2: maxEnergyKWh doesn't appear to work yet (always shows unlimited in the OEM app).
 ```
 
-#### Stopping an ongoing charging session
+#### Stopping a charging session
 
 ```typescript
 // Stop a charging session.
@@ -311,6 +312,8 @@ await evse.chargeStop();
 // stopped the session:
 await evse.chargeStop({ userId: "John Doe" });
 ````
+
+Note: `chargeStop` will also cancel a planned charging session, if one was set using `startAt` as an option for `chargeStart`.
 
 ## CLI test runner
 

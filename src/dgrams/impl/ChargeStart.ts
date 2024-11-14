@@ -1,5 +1,13 @@
 import EmDatagram from "../EmDatagram.js";
 
+function convertTimezone(date: Date, timeZone: string, timeZone2: string): Date {
+    const time = date.getTime();
+    const dateInTimeZone = new Date(date.toLocaleString('en-US', { timeZone }));
+    const dateInTimeZone2 = new Date(date.toLocaleString('en-US', { timeZone: timeZone2 }));
+    const offset = dateInTimeZone2.getTime() - dateInTimeZone.getTime();
+    return new Date(time + offset);
+}
+
 export class ChargeStart extends EmDatagram {
     public static readonly COMMAND = 32775;
 
@@ -37,13 +45,15 @@ export class ChargeStart extends EmDatagram {
         // 44 - 45 	chargeParam3 u16    always 65535
         // 46       maxElectricity u8   in amps
 
+        const startDate = convertTimezone(this.reservationDate || new Date(), 'Asia/Shanghai', Intl.DateTimeFormat().resolvedOptions().timeZone)
+
         const buffer = Buffer.alloc(47);
         buffer.writeUInt8(this.lineId || 1, 0);
         buffer.write(this.userId || "emmgr", 1, 16, "ascii");
         const chargeId = this.chargeId || new Date().toISOString().replace(/\D/g, "").slice(0, 12) + Math.floor(Math.random() * 10000).toString().padStart(4, "0");
         buffer.write(chargeId, 17, 16, "ascii");
         buffer.writeUInt8(this.reservationDate?.getTime() > now ? 1 : 0, 33);
-        buffer.writeUInt32BE(this.reservationDate?.getTime() / 1000 || now / 1000, 34);
+        buffer.writeUInt32BE(startDate?.getTime() / 1000 || now / 1000, 34);
         buffer.writeUInt8(this.startType, 38);
         buffer.writeUInt8(this.chargeType, 39);
         buffer.writeUInt16BE(this.param1MaxDurationMinutes || 65535, 40);
