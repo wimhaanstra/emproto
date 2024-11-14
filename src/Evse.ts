@@ -236,7 +236,11 @@ export default class Evse implements EmEvse {
             lineId: datagram.lineId,
         } as EmEvseLine;
         let changed = existing === undefined;
-        if (update(line, "currentPower", datagram.currentPower)) changed = true;
+        const currentPower = Math.floor(Math.max(
+            datagram.currentPower,
+            (datagram.l1Voltage * datagram.l1Electricity) + (datagram.l2Voltage * datagram.l2Electricity) + (datagram.l3Voltage * datagram.l3Electricity)
+        ));
+        if (update(line, "currentPower", currentPower)) changed = true;
         if (update(line, "currentAmount", datagram.currentAmount)) changed = true;
         if (update(line, "l1Voltage", datagram.l1Voltage)) changed = true;
         if (update(line, "l1Electricity", datagram.l1Electricity)) changed = true;
