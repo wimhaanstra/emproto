@@ -237,7 +237,7 @@ console.log(`Name: ${config.name}`);
 const freshConfig = await evse.fetchConfig();
 console.log(`Name: ${freshConfig.name}`);
 
-// You can also just call getLiveConfig without using its return value to trigger an
+// You can also just call fetchConfig without using its return value to trigger an
 // update. Any changes in config will also result in a "changed" event for the EVSE.
 // This is useful if you wish to add some "Refresh" button to your app's UI of the
 // EVSE's configuration and your UI is driven by these events. The communicator

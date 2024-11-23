@@ -1,4 +1,4 @@
-import Communicator from "./Communicator.js";
+import { Communicator } from "./Communicator.js";
 import { EmCommunicatorConfig } from "./util/types.js";
 
 /**

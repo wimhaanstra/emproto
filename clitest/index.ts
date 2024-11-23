@@ -1,4 +1,4 @@
-import Communicator from "Communicator.js";
+import { Communicator } from "Communicator.js";
 import { EmEvse } from "util/types.js";
 import { logError, logInfo, logSuccess, nowStr } from "util/util.js";
 

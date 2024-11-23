@@ -1,6 +1,8 @@
 import Evse from "Evse.js";
 import EmDatagram from "dgrams/EmDatagram.js";
 
+export { Communicator } from "../Communicator.js";
+
 export interface EmEvse {
     /**
      * Get information about the EVSE. EVSE does not need to be online or logged in for this.
@@ -16,7 +18,7 @@ export interface EmEvse {
      * Get live configuration from the EVSE. The EVSE needs to be online and logged in for this.
      * This method is called automatically immediately after a successful login.
      */
-    fetchConfig(): Promise<EmEvseConfig>;
+    fetchConfig(orCachedUntilSeconds?: number): Promise<EmEvseConfig>;
 
     /**
      * Get the last time a datagram was received from the EVSE.
@@ -49,7 +51,7 @@ export interface EmEvse {
      * Attempt to login using given password. The EVSE needs to be online for this.
      * If the password is correct, it is also saved for the EVSE.
      *
-     * @param password Password to use for logging in to the EVSE.
+     * @param password Password to use for logging in to the EVSE. If none is given, use the last-known password.
      * @returns Promise which resolves when the login is successful, or rejects otherwise (e.g. password incorrect
      *          or EVSE not responding).
      */

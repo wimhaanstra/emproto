@@ -1,5 +1,5 @@
 import { clearTimeout } from "node:timers";
-import Communicator from "./Communicator.js";
+import { Communicator } from "./Communicator.js";
 import EmDatagram from "./dgrams/EmDatagram.js";
 import {
     type DispatchEvent,

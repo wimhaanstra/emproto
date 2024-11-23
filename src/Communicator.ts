@@ -22,7 +22,7 @@ type EmEvseEventListener = {
     handler: EmEvseEventHandler;
 };
 
-class Communicator {
+export class Communicator {
 
     public readonly config: EmCommunicatorConfig;
 
@@ -398,5 +398,3 @@ class Communicator {
         });
     }
 }
-
-export default Communicator;
