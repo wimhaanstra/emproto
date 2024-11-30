@@ -58,10 +58,17 @@ export interface EmEvse {
     login(password?: string): Promise<void>;
 
     /**
-     * Get the "lines" of the EVSE, i.e. the connectors. Usually an EVSE will have only one, but the app protocol
-     * suggests support for multiple.
+     * Get the current state of the EVSE.
      */
-    getLines(): Map<number, EmEvseLine>;
+    getState(): EmEvseState;
+
+    /**
+     * Get info about the current charging session.
+     * If currently charging, this will return the current session.
+     * If a session is planned (reservation), this will return the planned session.
+     * If no session is active or planned, this will return the last finished session.
+     */
+    getCurrentCharge(): EmEvseCurrentCharge|undefined;
 
     /**
      * Set the EVSE's name. The EVSE needs to be online for this call to work.
@@ -150,22 +157,23 @@ export interface EmEvse {
     toString(): string;
 }
 
+export enum Phases {
+    SINGLE_PHASE = 1,
+    THREE_PHASE = 3
+}
+
 /**
  * Charge start parameters.
  */
 export type ChargeStartParams = {
     /**
-     * Line (plug, connector) ID to start charging on. This may be omitted if there is only one line (plug) on the
-     * EVSE (which is normally the case) - the EVSE will then start charging on that single line.
-     */
-    lineId?: number;
-    /**
      * Maximum current in amps to charge with. The OEM app uses the value obtained from the getOutputElectricity
      * command to get this value, and persists it on the EVSE using the setOutputElectricity command. That command
      * appears to only be used to persist/sync the value between apps (or sessions) and not influence the actual
      * charging current; the EVSE charges with the amps defined here for the charge start.
+     * If omitted, the EVSE will charge with the value obtained from getOutputElectricity.
      */
-    maxAmps: number;
+    maxAmps?: number;
     /**
      * Identifier of the charging session. Maximum 16 ASCII characters (truncated if too long).
      * Default if omitted is: current time (even if startAt is set in future) formatted as: yyyyMMddHHmm, plus 4 random
@@ -193,10 +201,14 @@ export type ChargeStartParams = {
      * Maximum value appears to be 655.35 kWh.
      */
     maxEnergyKWh?: number;
+    /**
+     * Whether to limit charging to single phase. If omitted or false, the EVSE will charge with 3 phases if available.
+     * This is only relevant for 3-phase EVSEs; you don't have to set it to true to charge single-phase EVSEs.
+     */
+    singlePhase?: boolean;
 };
 
 export type ChargeStartResult = {
-    lineId: number;
     reservationResult: ChargeStartReservationResult;
     startResult: number;
     errorReason: ChargeStartErrorReason;
@@ -205,18 +217,12 @@ export type ChargeStartResult = {
 
 export type ChargeStopParams = {
     /**
-     * Line (plug, connector) ID to stop charging on. This may be omitted if there is only one line (plug) on the
-     * EVSE (which is normally the case) - the EVSE will then stop charging on that single line.
-     */
-    lineId?: number;
-    /**
      * Identifier of the user stopping the session. Maximum 16 ASCII characters (truncated if too long).
      */
     userId?: string;
 };
 
 export type ChargeStopResult = {
-    lineId: number;
     stopResult: number;
     failReason: number;
 }
@@ -306,16 +312,16 @@ export enum EmEvseCurrentState {
     UNKNOWN = 254
 }
 
-export enum EmEvseErrorState {
-    NO_ERROR = 0,
-    RELAY_STICK_ERROR = 1,
-    METER_ERROR = 2,
+export enum EmEvseError {
+    RELAY_STICK_ERROR_L1 = 0,
+    RELAY_STICK_ERROR_L2 = 1,
+    RELAY_STICK_ERROR_L3 = 2,
     OFFLINE = 3,
     CC_ERROR = 4,
     CP_ERROR = 5,
     EMERGENCY_STOP = 6,
-    UNKNOWN_7 = 7,
-    OVER_TEMPERATURE = 8,
+    OVER_TEMPERATURE_INNER = 7,
+    OVER_TEMPERATURE_OUTER = 8,
     UNKNOWN_9 = 9,
     LEAKAGE_PROTECTION = 10,
     SHORT_CIRCUIT = 11,
@@ -323,12 +329,13 @@ export enum EmEvseErrorState {
     UNGROUNDED = 13,
     OVER_VOLTAGE = 14,
     LOW_VOLTAGE = 15,
+    INPUT_POWER_ERROR = 25,
+    MAINS_OVERLOAD = 26,
     DIODE_SHORT_CIRCUIT = 27,
     RTC_FAILURE = 28,
     FLASH_MEMORY_FAILURE = 29,
     EEPROM_FAILURE = 30,
     METERING_MODULE_FAILURE = 31,
-    UNKNOWN = 254
 }
 
 export type EmEvseInfo = {
@@ -340,6 +347,7 @@ export type EmEvseInfo = {
     hardwareVersion?: string;
     softwareVersion?: string;
     hotLine?: string;
+    phases?: Phases;
     // The physical maximum power (in watts) the EVSE can deliver. This is maxElectricity times phase voltage
     // times the number of phases.
     maxPower?: number;
@@ -369,7 +377,7 @@ export type EmEvseConfig = {
     maxElectricity?: number;
 };
 
-export type EmEvseLine = {
+export type EmEvseState = {
     lineId: number;
     currentPower: number;
     currentAmount: number;
@@ -384,7 +392,34 @@ export type EmEvseLine = {
     currentState: EmEvseCurrentState;
     gunState: EmEvseGunState;
     outputState: EmEvseOutputState;
-    errors: EmEvseErrorState[];
+    errors: EmEvseError[];
+};
+
+export type EmEvseCurrentCharge = {
+    port: number;
+    currentState: EmEvseCurrentState;
+    chargeId: string;
+    startType: number;
+    chargeType: number;
+    maxDurationMinutes?: number;
+    maxEnergyKWh?: number;
+    /**
+     * When the charging session is planned to be started.
+     */
+    reservationDate: Date;
+    userId: string;
+    maxElectricity: number;
+    /**
+     * When the charging session was entered (started immediately or planned to be started later, at reservationDate).
+     */
+    startDate: Date;
+    durationSeconds: number;
+    startKWhCounter: number;
+    currentKWhCounter: number;
+    chargeKWh: number;
+    chargePrice: number;
+    feeType: number;
+    chargeFee: number;
 };
 
 export enum OffLineChargeStatusMapping {

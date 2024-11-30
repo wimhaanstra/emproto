@@ -3,7 +3,7 @@ import { Buffer } from "node:buffer";
 
 export class RequestStatusRecord extends EmDatagram {
 
-    public static readonly COMMAND = 0x000d;
+    public static readonly COMMAND = 13;
 
     protected packPayload() {
         return Buffer.of();

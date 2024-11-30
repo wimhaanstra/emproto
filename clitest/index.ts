@@ -89,9 +89,11 @@ function evseMatches(evse: EmEvse) {
 
         process.stdout.write(`[${nowStr()}] ⚡ ${evt} ${evse.toString()}\n`);
         if (evt === 'removed') return;
-        evse.getLines().forEach(line => {
-            process.stdout.write(`[${nowStr()}]   🔌 ${JSON.stringify(line)}\n`);
-        });
+        process.stdout.write(`    🔌 State: ${JSON.stringify(evse.getState())}\n`);
+        const currentCharge = evse.getCurrentCharge();
+        if (currentCharge) {
+            process.stdout.write(`    🔋 Charge: ${JSON.stringify(currentCharge)}\n`);
+        }
 
         if (evseMatches(evse)) {
             if (passwords[evse.getInfo().serial]) {

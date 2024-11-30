@@ -1,6 +1,6 @@
 # EM Protocol Handler
 
-Typescript node library to communicate with wallboxes (aka [EVSEs](https://en.wikipedia.org/wiki/EVSE)) using the "EVSEMaster" app: Besen, Telestar, evseODM, Morec, Deltaco, ...
+Typescript node library to communicate with chargers (aka [EVSEs](https://en.wikipedia.org/wiki/EVSE)) using the "EVSEMaster" app: Besen, Telestar, evseODM, Morec, Deltaco, ...
 
 This library also includes a small [CLI test runner](#cli-test-runner) which you may use to read info from and control EVSEs.
 
@@ -9,12 +9,12 @@ although there seem to be some subtle differences in supported datagrams and the
 doesn't work, please set `dumpDatagrams: true` in the communicator constructor `config` parameter in order to see what data is received;
 this may help in debugging.
 
-This library doesn't do any bluetooth; it is assumed that you have setup a WiFi connection on your wallbox using the OEM app, and it is
-reachable from the host where you run the library. Broadcast UDP packets from the wallbox should also be available to the library; if you
-have placed your wallbox in a separate network or VLAN, or run the library in a docker container with network separation, then ensure
-broadcast datagrams from the wallbox are routed to the library.
-While the OEM app insists on reconnecting via bluetooth regularly, that seems to be an app issue; the wallbox does in fact remain fully
-functional on the network once the WiFi connection is correctly configured.
+This library doesn't do any bluetooth; it is assumed that you have set up a Wi-Fi connection on your charger using the OEM app, and it is
+reachable from the host where you run the library. Broadcast UDP packets from the charger should also be available to the library; if you
+have placed your charger in a separate network or VLAN, or run the library in a docker container with network separation, then ensure
+broadcast datagrams from the charger are routed to the library.
+While the OEM app insists on reconnecting via bluetooth regularly, that seems to be an app issue; the charger does in fact remain fully
+functional on the network once the Wi-Fi connection is correctly configured.
 
 ## Installation
 
@@ -45,9 +45,8 @@ const evsesFile = '~/evses.json';
 
     communicator.addEventListener(["added", "changed", "removed"], (evse, event) => {
         console.log(`${event} ${evse.toString()}`);
-        for (const [, line] of evse.getLines()) {
-            console.log(`  ${JSON.stringify(line)}`);
-        }
+        console.log(`  State: ${JSON.stringify(evse.getState())}`);
+        console.log(`  Charge: ${JSON.stringify(evse.getCurrentCharge())}`);
     });
 
     process.on('SIGINT', () => {
@@ -64,8 +63,8 @@ node index.js
 ```
 
 Use Ctrl+C to exit your app.
-This example app doesn't login to any wallboxes so it'll show only basic info (no lines info), unless another app has saved the password to `~/evses.json`.
-Read on to see how to login and get more info from a wallbox, and how to control it.
+This example app doesn't log in to any chargers so it'll show only basic info (no lines info), unless another app has saved the password to `~/evses.json`.
+Read on to see how to login and get more info from a charger, and how to control it.
 
 ## Requirements
 
@@ -128,7 +127,7 @@ communicator.saveEvses("~/evses.json");
 
 ### EVSE class
 
-The `Evse` class represents a single wallbox and exposes the functionality to read and interact with it.
+The `Evse` class represents a single charger and exposes the functionality to read and interact with it.
 You can obtain `Evse` class instances from the `Communicator`.
 
 #### Getting EVSE info and configuration
@@ -179,43 +178,37 @@ await evse.login("123456");
 // started again at a later time.
 ```
 
-#### Reading charging status of lines (connectors, plugs)
+#### Reading EVSE status
 
-Once logged in, the EVSE will start sending us info about its lines (aka plugs, connectors).
-Theoretically, an EVSE could have multiple lines, but in practice all EVSEs supported by the
-OEM app seem to have just one line (suggested by the fact that the OEM app uses hardcoded
-value 1 for `lineId` in various places). In any case, the EVSE will not have any information
-about its lines until the library logs in. After logging in, it can take a few seconds before
-the first update arrives, and the lines array will be updated about once every 5-10 seconds.
-The library checks incoming info against the current state it has, and if anything changed,
-the state will be updated and a "changed" event will be fired for the EVSE.
+Once logged in, the EVSE will start sending us status info periodically.  After logging in,
+it can take a few seconds before the first update arrives, and the state will be  updated
+about once every 5-10 seconds. The library checks incoming info against the current state
+it has, and if anything changed, the state will be updated and a "changed" event will be
+fired for the EVSE.
 
 ```typescript
-import { EmEvseLine } from "emproto/types";
+import { EmEvseState } from "emproto/types";
 
-const lines = evse.getLines();
-// Lines is a Map of EmEvseLine instances keyed by their lineId. In practice all supported
-// EVSEs will have just one, with lineId=1.
-const line1 = lines.get(1);
+const state = evse.getState();
 
 // State fields.
-console.log(`State: ${line1.currentState}`); // See EmEvseCurrentState enum
-console.log(`Gun state: ${line1.gunState}`); // See EmEvseGunState enum
-console.log(`Charging state: ${line1.outputState}`); // See EmEvseOutputState enum
+console.log(`State: ${state.currentState}`); // See EmEvseCurrentState enum
+console.log(`Gun state: ${state.gunState}`); // See EmEvseGunState enum
+console.log(`Charging state: ${state.outputState}`); // See EmEvseOutputState enum
 
 // Power across all phases.
-console.log(`Current power: ${line1.currentPower} W`);
+console.log(`Current power: ${state.currentPower} W`);
 // Volts and amps per phase (l2 and l3 also available). Amps obviously will only be nonzero when charging.
-console.log(`Current voltage (phase L1): ${line1.l1Voltage} V`);
-console.log(`Current amps (phase L1): ${line1.l1Electricity} A`);
+console.log(`Current voltage (phase L1): ${state.l1Voltage} V`);
+console.log(`Current amps (phase L1): ${state.l1Electricity} A`);
 
 // Temperatures. There are two values, inner and outer, but they may be equal if the EVSE only
 // has one sensor (or outer temp may be omitted).
-console.log(`Inner temperature: ${line1.innerTemp} °C`);
-console.log(`Outer temperature: ${line1.outerTemp} °C`);
+console.log(`Inner temperature: ${state.innerTemp} °C`);
+console.log(`Outer temperature: ${state.outerTemp} °C`);
 
 // Errors list as an array of EmEvseErrorState values. May this array forever remain empty.
-console.log(`Errors: ${line1.errors.join(", ")}`);
+console.log(`Errors: ${state.errors.join(", ")}`);
 ```
 
 #### Getting configuration
@@ -231,7 +224,7 @@ console.log(`Name: ${config.name}`);
 // current, live config, use fetchConfig. This method returns a promise that will
 // resolve with the config once it's available. You can call this method right after
 // login() returns (it will recycle the same promise if the config is already being
-// fetched). By default, an existing config is returned without going to the wallbox
+// fetched). By default, an existing config is returned without going to the charger
 // if it was just fetched (within the last 5 seconds). This max-age (in seconds) can
 // be specified as an argument to fetchConfig.
 const freshConfig = await evse.fetchConfig();
@@ -252,7 +245,7 @@ Upon successful change, the EVSE's config data structure will also be updated an
 "changed" event will be emitted for the EVSE.
 
 ```typescript
-await evse.setName("My wallbox");
+await evse.setName("My charger");
 await evse.setOffLineCharge("DISABLED");
 await evse.setTemperatureUnit("CELSIUS");
 await evse.setLanguage("ENGLISH");
@@ -263,23 +256,28 @@ await evse.setLanguage("ENGLISH");
 ```typescript
 import { ChargeStartParams } from "emproto/types";
 
-// Start a charging session using 6 amps on each phase. The maxAmps field is required.
-// It is strongly suggested that your app defaults this value to the maxElectricity
-// set in config. Of course it could allow the user to alter the value (never above
-// getInfo().maxElectricity which specifies the maximum value supported by the EVSE)
-// and remember the user's preference for next time, also storing it in the EVSE's
-// configuration using setMaxElectricity.
+// Start a charging session using 6 amps. If this value is different from the one
+// configured for the EVSE (in getConfig().maxElectricity), this new value will be
+// written to the EVSE so other apps will also have the updated amps value.
 await evse.chargeStart({ maxAmps: 6});
+
+// You can omit the maxAmps parameter to use the currently configured value from
+// getConfig().maxElectricity.
+await evse.chargeStart();
 
 // You may also specify a user name of the person using your app. This name will be
 // visible in historical charge records (including those in the OEM app). Maximum
 // length is 16 ASCII characters.
-await evse.chargeStart({ maxAmps: 6, userId: "John Doe" });
+await evse.chargeStart({ userId: "John Doe" });
 
 // You may also specify a custom identifier for the session, for example to correlate
 // the session stored on the EVSE with one stored in your app's database. Maximum
 // length is 16 ASCII characters.
-await evse.chargeStart({ maxAmps: 6, chargeId: "ABC123" });
+await evse.chargeStart({ chargeId: "ABC123" });
+
+// If you have a 3-phase EVSE, by default the EVSE will use all 3 phases for charging.
+// You can limit this to single phase:
+await evse.chargeStart({ singlePhase: true });
 
 // You can delay-start a session by specifying a start time. If omitted or the time
 // is not in the future, charging will start immediately. Starting one hour from now:
@@ -287,19 +285,52 @@ await evse.chargeStart({
     maxAmps: 6,
     startAt: new Date(Date.now() + (3600 * 1000))
 });
-// Note: There is no way yet of inspecting whether a delayed session is planned.
 
 // You can limit the duration (in minutes, integer) and/or the amount of energy (in
 // kWh, float) of the session:
 await evse.chargeStart({
-    maxAmps: 6,
     maxDurationMinutes: 90,
     maxEnergyKWh: 7.5
 });
-// Note 1: There is no way yet of inspecting what the limits are for an ongoing session.
-//         For now, suggest that your app remembers it (possibly using the sessionId
-//         correlator which it can set itself at start time).
-// Note 2: maxEnergyKWh doesn't appear to work yet (always shows unlimited in the OEM app).
+// Note: maxEnergyKWh doesn't appear to work yet (always shows unlimited in the OEM app,
+//       although it also doesn't seem to work when starting a session in OEM app itself).
+```
+
+#### Getting info about the current charging session
+
+```typescript
+import { EmEvseCurrentCharge } from "emproto/types";
+
+// If the EVSE is currently charging, this returns info about the ongoing charging session.
+// If it's not charging but a session is planned, then this returns info about the planned
+// session. If there is no session ongoing or planned, this returns info about the last finished
+// session. Otherwise, it returns undefined.
+// Note that you can use chargeStop() both to stop an ongoing session and to cancel a planned
+// session.
+const currentCharge = evse.getCurrentCharge();
+
+// How many kWh have been charged in this session.
+console.log(`Charged energy: ${currentCharge.chargeKWh} kWh`);
+
+// How long the session is going on, or (if finished) took.
+console.log(`Duration: ${currentCharge.durationSeconds} seconds`);
+
+// When the session was entered into the EVSE. If it's not a planned session (currentState
+// is not CHARGING_RESERVATION), then the session will also have started at this time.
+console.log(`Start time: ${currentCharge.startDate.toISOString()}`);
+
+// When the session will start charging (for reservations/planned sessions, if currentState
+// is CHARGING_RESERVATION).
+console.log(`Start time: ${currentCharge.reservationDate.toISOString()}`);
+
+// The maximum current used for this session.
+console.log(`Max current: ${currentCharge.maxElectricity} A`);
+
+// The maximum duration for this session in minutes, as specified at start/reservation time.
+console.log(`Max duration: ${currentCharge.maxDurationMinutes} minutes`);
+
+// The maximum energy to charge for this session in kWh, as specified at start/reservation time.
+console.log(`Max energy: ${currentCharge.maxEnergyKWh} kWh`);
 ```
 
 #### Stopping a charging session
@@ -317,7 +348,7 @@ Note: `chargeStop` will also cancel a planned charging session, if one was set u
 
 ## CLI test runner
 
-The CLI runner is also written in Typescript, so a plain nodejs runtime will not be able to run it directly.
+The CLI runner is also written in Typescript, so a plain Node.js runtime will not be able to run it directly.
 You can run it from the emproto root like this:
 
 ```bash
@@ -327,20 +358,20 @@ This will discover EVSEs on the network and print some info as changes are detec
 
 Add `dump` (to any command) to dump incoming and outgoing datagrams (note: once logged in, you'll get more info but the EVSE's password will be present in the dumped datagrams, so don't copy-paste them to the internet).
 
-To login, set a password like this:
+To log in, set a password like this:
 ```bash
 npx tsx clitest EC311S=123456
 ```
-"EC311S" in this example is the model name of the charger, but you can use any part of the serial, brand or model. The CLI runner will try to login using the 6-digit password on the first matching EVSE.
+"EC311S" in this example is the model name of the charger, but you can use any part of the serial, brand or model. The CLI runner will try to log in using the 6-digit password on the first matching EVSE.
 If login is successful, the password will also be persisted in ~/evses.json, so you can just run `npx tsx clitest` next time and see the EVSE's detail info without needing to specify the password again.
-For EVSEs that the CLI runner can login to, it will also print the "lines" (plugs, connectors) that are available on the EVSE with that charging status. Most will have just one line.
+For EVSEs that the CLI runner can log in to, it will also print the "lines" (plugs, connectors) that are available on the EVSE with that charging status. Most will have just one line.
 
 To show info of a specific EVSE, use the same type of filter as for login:
 ```bash
 npx tsx clitest EC311S
 ```
 
-To start a session, use the `start=<amps>` command, specifying the maximum amperage to use. You can specify a filter to run the command on a specific EVSE; otherwise the first online EVSE that the CLI runner can login to will be used.
+To start a session, use the `start=<amps>` command, specifying the maximum amperage to use. You can specify a filter to run the command on a specific EVSE; otherwise the first online EVSE that the CLI runner can log in to will be used.
 ```bash
 npx tsx clitest start=6
 

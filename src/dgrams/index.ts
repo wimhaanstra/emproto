@@ -10,9 +10,8 @@ import { ChargeStart, ChargeStartResponse } from "./impl/ChargeStart.js";
 import { ChargeStop, ChargeStopResponse } from "./impl/ChargeStop.js";
 import { SetAndGetAlarmChargeStrategyResponse } from "./impl/SetAndGetAlarmChargeStrategyResponse.js";
 import { SettingSystemTime } from "./impl/SystemTime.js";
-import { SingleACChargingStatusPublicAuto } from "./impl/SingleACChargingStatusPublicAuto.js";
+import { SingleACChargingStatusPublicAuto, SingleACChargingStatusResponse } from "./impl/SingleACChargingStatus.js";
 import { RequestStatusRecord } from "./impl/RequestStatusRecord.js";
-import { SingleACChargingStatusResponse } from "./impl/SingleACChargingStatusResponse.js";
 import { SetAndGetChargeFeeResponse } from "./impl/SetAndGetChargeFeeResponse.js";
 import { SetAndGetServiceFeeResponse } from "./impl/SetAndGetServiceFeeResponse.js";
 import { SetAndGetNickName, SetAndGetNickNameResponse } from "./impl/SetAndGetNickName.js";
@@ -22,6 +21,11 @@ import { SetAndGetOffLineCharge, SetAndGetOffLineChargeResponse } from "./impl/S
 import { SetAndGetLanguage, SetAndGetLanguageResponse } from "./impl/SetAndGetLanguage.js";
 import { GetVersion, GetVersionResponse } from "./impl/GetVersion.js";
 import { UploadLocalChargeRecord } from "./impl/UploadLocalChargeRecord.js";
+import {
+    CurrentChargeRecord,
+    CurrentChargeRecordResponse,
+    RequestChargeStatusRecord
+} from "./impl/CurrentChargeRecord.js";
 
 // Register implementations here.
 const emDatagramTypes = [
@@ -29,6 +33,9 @@ const emDatagramTypes = [
     ChargeStartResponse,
     ChargeStop,
     ChargeStopResponse,
+    RequestChargeStatusRecord,
+    CurrentChargeRecord,
+    CurrentChargeRecordResponse,
     GetVersion,
     GetVersionResponse,
     Heading,

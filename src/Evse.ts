@@ -1,41 +1,47 @@
-import { clearTimeout } from "node:timers";
-import { Communicator } from "./Communicator.js";
+import {clearTimeout} from "node:timers";
+import {Communicator} from "./Communicator.js";
 import EmDatagram from "./dgrams/EmDatagram.js";
 import {
+    ChargeStartParams,
+    ChargeStartResult,
+    ChargeStopParams,
+    ChargeStopResult,
     type DispatchEvent,
+    EmEvse,
     type EmEvseConfig,
+    EmEvseCurrentCharge,
     type EmEvseEvent,
     type EmEvseInfo,
-    type EmEvseLine,
-    type Language,
+    type EmEvseState,
     isEmEvseInfo,
+    type Language,
     OffLineChargeAction,
     OffLineChargeStatus,
+    Phases,
     SetAndGetLanguageAction,
     SetAndGetNickNameAction,
     SetAndGetOutputElectricityAction,
     SetAndGetTemperatureUnitAction,
-    TemperatureUnit,
-    EmEvse,
-    ChargeStartParams,
-    ChargeStartResult,
-    ChargeStopParams,
-    ChargeStopResult
+    TemperatureUnit
 } from "./util/types.js";
 import {decodePassword, encodePassword, logError, logInfo, logWarning, toDate, update} from "./util/util.js";
-import { LoginAbstract, LoginConfirm, LoginResponse, RequestLogin } from "./dgrams/impl/Login.js";
-import { SingleACStatus } from "./dgrams/impl/SingleACStatus.js";
-import { SetAndGetNickName, SetAndGetNickNameResponse } from "./dgrams/impl/SetAndGetNickName.js";
-import { SetAndGetTemperatureUnit, SetAndGetTemperatureUnitResponse } from "./dgrams/impl/SetAndGetTemperatureUnit.js";
-import { SetAndGetOutputElectricity, SetAndGetOutputElectricityResponse } from "./dgrams/impl/SetAndGetOutputElectricity.js";
-import { SetAndGetOffLineCharge, SetAndGetOffLineChargeResponse } from "./dgrams/impl/SetAndGetOffLineCharge.js";
-import { SetAndGetLanguage, SetAndGetLanguageResponse } from "./dgrams/impl/SetAndGetLanguage.js";
-import { GetVersion, GetVersionResponse } from "./dgrams/impl/GetVersion.js";
-import { HeadingResponse } from "./dgrams/impl/Heading.js";
-import { PasswordErrorResponse } from "./dgrams/impl/PasswordErrorResponse.js";
-import { ChargeStart, ChargeStartResponse } from "./dgrams/impl/ChargeStart.js";
-import { ChargeStop, ChargeStopResponse } from "./dgrams/impl/ChargeStop.js";
-import { ChargeStartError, successReservationResults } from "./errors/ChargeStartError.js";
+import {LoginAbstract, LoginConfirm, LoginResponse, RequestLogin} from "./dgrams/impl/Login.js";
+import {SingleACStatus} from "./dgrams/impl/SingleACStatus.js";
+import {SetAndGetNickName, SetAndGetNickNameResponse} from "./dgrams/impl/SetAndGetNickName.js";
+import {SetAndGetTemperatureUnit, SetAndGetTemperatureUnitResponse} from "./dgrams/impl/SetAndGetTemperatureUnit.js";
+import {
+    SetAndGetOutputElectricity,
+    SetAndGetOutputElectricityResponse
+} from "./dgrams/impl/SetAndGetOutputElectricity.js";
+import {SetAndGetOffLineCharge, SetAndGetOffLineChargeResponse} from "./dgrams/impl/SetAndGetOffLineCharge.js";
+import {SetAndGetLanguage, SetAndGetLanguageResponse} from "./dgrams/impl/SetAndGetLanguage.js";
+import {GetVersion, GetVersionResponse} from "./dgrams/impl/GetVersion.js";
+import {HeadingResponse} from "./dgrams/impl/Heading.js";
+import {PasswordErrorResponse} from "./dgrams/impl/PasswordErrorResponse.js";
+import {ChargeStart, ChargeStartResponse} from "./dgrams/impl/ChargeStart.js";
+import {ChargeStop, ChargeStopResponse} from "./dgrams/impl/ChargeStop.js";
+import {ChargeStartError, successReservationResults} from "./errors/ChargeStartError.js";
+import {SingleACChargingStatus} from "./dgrams/impl/SingleACChargingStatus.js";
 
 export default class Evse implements EmEvse {
 
@@ -49,7 +55,8 @@ export default class Evse implements EmEvse {
     private lastConfigUpdate: Date|undefined;
     private online: boolean;
     private password: string|undefined;
-    private readonly lines: Map<number, EmEvseLine> = new Map();
+    private state: EmEvseState;
+    private currentCharge?: EmEvseCurrentCharge;
     private configUpdatePromise?: Promise<any>;
 
     constructor(communicator: Communicator,
@@ -111,8 +118,12 @@ export default class Evse implements EmEvse {
         return this.password && this.password === password;
     }
 
-    public getLines(): Map<number, EmEvseLine> {
-        return this.lines;
+    public getState(): EmEvseState {
+        return this.state;
+    }
+
+    public getCurrentCharge(): EmEvseCurrentCharge | undefined {
+        return this.currentCharge;
     }
 
     public sendDatagram(datagram: EmDatagram): Promise<number> {
@@ -164,6 +175,9 @@ export default class Evse implements EmEvse {
         }
         if (datagram instanceof SingleACStatus) {
             return this.updateSingleAcStatus(datagram);
+        }
+        if (datagram instanceof SingleACChargingStatus) {
+            return this.updateChargingStatus(datagram)
         }
         if (datagram instanceof SetAndGetOffLineChargeResponse) {
             return this.updateOfflineCharging(datagram);
@@ -228,39 +242,63 @@ export default class Evse implements EmEvse {
             changed = true;
         }
 
+        const phases = [10, 11, 12, 13, 14, 15, 22, 23, 24, 25].includes(login.getType()) ? Phases.THREE_PHASE : Phases.SINGLE_PHASE;
+        if (this.info.phases !== phases) {
+            this.info.phases = phases;
+            changed = true;
+        }
+
         return changed;
     }
 
     private updateSingleAcStatus(datagram: SingleACStatus): boolean {
-        const existing = this.lines.get(datagram.lineId);
-        const line = existing || {
-            lineId: datagram.lineId,
-        } as EmEvseLine;
-        let changed = existing === undefined;
+        let changed = this.state === undefined;
+        if (!this.state) this.state = {} as EmEvseState;
         const currentPower = Math.floor(Math.max(
             datagram.currentPower,
             (datagram.l1Voltage * datagram.l1Electricity) + (datagram.l2Voltage * datagram.l2Electricity) + (datagram.l3Voltage * datagram.l3Electricity)
         ));
-        if (update(line, "currentPower", currentPower)) changed = true;
-        if (update(line, "currentAmount", datagram.currentAmount)) changed = true;
-        if (update(line, "l1Voltage", datagram.l1Voltage)) changed = true;
-        if (update(line, "l1Electricity", datagram.l1Electricity)) changed = true;
-        if (update(line, "l2Voltage", datagram.l2Voltage)) changed = true;
-        if (update(line, "l2Electricity", datagram.l2Electricity)) changed = true;
-        if (update(line, "l3Voltage", datagram.l3Voltage)) changed = true;
-        if (update(line, "l3Electricity", datagram.l3Electricity)) changed = true;
-        if (update(line, "innerTemp", datagram.innerTemp)) changed = true;
-        if (update(line, "outerTemp", datagram.outerTemp)) changed = true;
-        if (update(line, "currentState", datagram.currentState)) changed = true;
-        if (update(line, "gunState", datagram.gunState)) changed = true;
-        if (update(line, "outputState", datagram.outputState)) changed = true;
-        if (update(line, "errors", datagram.errorState)) changed = true;
-
-        if (!existing) {
-            this.lines.set(line.lineId, line);
-        }
+        if (update(this.state, "currentPower", currentPower)) changed = true;
+        if (update(this.state, "currentAmount", datagram.totalKWhCounter)) changed = true;
+        if (update(this.state, "l1Voltage", datagram.l1Voltage)) changed = true;
+        if (update(this.state, "l1Electricity", datagram.l1Electricity)) changed = true;
+        if (update(this.state, "l2Voltage", datagram.l2Voltage)) changed = true;
+        if (update(this.state, "l2Electricity", datagram.l2Electricity)) changed = true;
+        if (update(this.state, "l3Voltage", datagram.l3Voltage)) changed = true;
+        if (update(this.state, "l3Electricity", datagram.l3Electricity)) changed = true;
+        if (update(this.state, "innerTemp", datagram.innerTemp)) changed = true;
+        if (update(this.state, "outerTemp", datagram.outerTemp)) changed = true;
+        if (update(this.state, "currentState", datagram.currentState)) changed = true;
+        if (update(this.state, "gunState", datagram.gunState)) changed = true;
+        if (update(this.state, "outputState", datagram.outputState)) changed = true;
+        if (update(this.state, "errors", datagram.errors)) changed = true;
         return changed;
     }
+
+    private updateChargingStatus(datagram: SingleACChargingStatus) {
+        let changed = this.currentCharge === undefined;
+        if (!this.currentCharge) this.currentCharge = {} as EmEvseCurrentCharge;
+        if (update(this.currentCharge, "port", datagram.port)) changed = true;
+        if (update(this.currentCharge, "currentState", datagram.currentState)) changed = true;
+        if (update(this.currentCharge, "chargeId", datagram.chargeId)) changed = true;
+        if (update(this.currentCharge, "startType", datagram.startType)) changed = true;
+        if (update(this.currentCharge, "chargeType", datagram.chargeType)) changed = true;
+        if (update(this.currentCharge, "maxDurationMinutes", datagram.maxDurationMinutes)) changed = true;
+        if (update(this.currentCharge, "maxEnergyKWh", datagram.maxEnergyKWh)) changed = true;
+        if (update(this.currentCharge, "reservationDate", datagram.reservationDate)) changed = true;
+        if (update(this.currentCharge, "userId", datagram.userId)) changed = true;
+        if (update(this.currentCharge, "maxElectricity", datagram.maxElectricity)) changed = true;
+        if (update(this.currentCharge, "startDate", datagram.startDate)) changed = true;
+        if (update(this.currentCharge, "durationSeconds", datagram.durationSeconds)) changed = true;
+        if (update(this.currentCharge, "startKWhCounter", datagram.startKWhCounter)) changed = true;
+        if (update(this.currentCharge, "currentKWhCounter", datagram.currentKWhCounter)) changed = true;
+        if (update(this.currentCharge, "chargeKWh", datagram.chargeKWh)) changed = true;
+        if (update(this.currentCharge, "chargePrice", datagram.chargePrice)) changed = true;
+        if (update(this.currentCharge, "feeType", datagram.feeType)) changed = true;
+        if (update(this.currentCharge, "chargeFee", datagram.chargeFee)) changed = true;
+        return changed;
+    }
+
 
     /**
      * Serialize this EmEvse to a plain object.
@@ -389,6 +427,11 @@ export default class Evse implements EmEvse {
             changed = true;
         }
 
+        if (other.info.phases !== undefined && other.info.phases !== this.info.phases) {
+            this.info.phases = other.info.phases;
+            changed = true;
+        }
+
         if (other.config.name && (!this.config.name || other.config.name !== this.config.name)) {
             this.config.name = other.config.name;
             changed = true;
@@ -480,6 +523,7 @@ export default class Evse implements EmEvse {
             this.sendDatagram(new SetAndGetOutputElectricity().setAction(SetAndGetOutputElectricityAction.GET)).then();
             this.sendDatagram(new SetAndGetTemperatureUnit().setAction(SetAndGetTemperatureUnitAction.GET)).then();
             this.sendDatagram(new GetVersion()).then();
+            logInfo(`Fetching config for ${this.toString()}`);
         }
 
         // Wait until all responses are in. If some responses are lost, this composite promise will fail
@@ -494,7 +538,6 @@ export default class Evse implements EmEvse {
         // only mark the time that configuration was last updated, so we can know later on if we need
         // to refresh.
         this.lastConfigUpdate = new Date();
-        logInfo(`Fetched config for ${this.toString()}`);
         this.dispatchEvent("changed");
         return this.config;
     }
@@ -641,27 +684,32 @@ export default class Evse implements EmEvse {
         this.dispatchEvent("changed", response);
     }
 
-    public async chargeStart(params: ChargeStartParams): Promise<ChargeStartResult> {
+    public async chargeStart(params: ChargeStartParams = {}): Promise<ChargeStartResult> {
+        const maxAmps = params.maxAmps || this.config.maxElectricity;
+        if (!maxAmps || maxAmps < 6 || maxAmps > 32) {
+            throw new Error(`${maxAmps ? 'Invalid' : 'No'} amps value specified to start charging and none available from configuration.`);
+        }
+
+        if (maxAmps !== this.config.maxElectricity) {
+            await this.setMaxElectricity(maxAmps);
+        }
+
         const chargeStart = new ChargeStart()
-            .setLineId(params.lineId)
+            .setLineId(params.singlePhase || this.info.phases !== Phases.THREE_PHASE ? 1 : 2)
             .setUserId(params.userId)
             .setChargeId(params.chargeId)
             .setReservationDate(params.startAt)
             .setMaxDurationMinutes(params.maxDurationMinutes)
             .setMaxEnergyKWh(params.maxEnergyKWh)
-            .setMaxElectricity(params.maxAmps);
+            .setMaxElectricity(maxAmps);
         await this.sendDatagram(chargeStart);
         const response = await this.waitForResponse(ChargeStartResponse.COMMAND, 5000) as ChargeStartResponse;
-        if (response.getLineId() !== chargeStart.getLineId()) {
-            throw new Error(`chargeStart expected lineId ${chargeStart.getLineId()} in response, got ${response.getLineId()}`);
-        }
 
         if (response.getErrorReason() || !successReservationResults.includes(response.getReservationResult())) {
             throw new ChargeStartError(response);
         }
 
         return {
-            lineId: response.getLineId(),
             reservationResult: response.getReservationResult(),
             startResult: response.getStartResult(),
             errorReason: response.getErrorReason(),
@@ -669,18 +717,16 @@ export default class Evse implements EmEvse {
         };
     }
 
-    public async chargeStop(params?: ChargeStopParams): Promise<ChargeStopResult> {
-        const chargeStop = new ChargeStop().setLineId(params?.lineId).setUserId(params?.userId);
+    public async chargeStop(params: ChargeStopParams = {}): Promise<ChargeStopResult> {
+        const chargeStop = new ChargeStop().setUserId(params.userId);
         await this.sendDatagram(chargeStop);
         const response = await this.waitForResponse(ChargeStopResponse.COMMAND, 5000) as ChargeStopResponse;
-        if (response.getLineId() !== chargeStop.getLineId()) {
-            throw new Error(`chargeStop expected lineId ${chargeStop.getLineId()} in response, got ${response.getLineId()}`);
-        }
+
         if (response.getFailReason()) {
             throw new Error(`chargeStop failed with reason ${response.getFailReason()}`);
         }
+
         return {
-            lineId: response.getLineId(),
             stopResult: response.getStopResult(),
             failReason: response.getFailReason()
         };

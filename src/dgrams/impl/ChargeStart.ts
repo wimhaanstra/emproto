@@ -1,13 +1,6 @@
 import EmDatagram from "../EmDatagram.js";
 import { ChargeStartErrorReason, ChargeStartReservationResult } from "../../util/types.js";
-
-function convertTimezone(date: Date, timeZone: string, timeZone2: string): Date {
-    const time = date.getTime();
-    const dateInTimeZone = new Date(date.toLocaleString('en-US', { timeZone }));
-    const dateInTimeZone2 = new Date(date.toLocaleString('en-US', { timeZone: timeZone2 }));
-    const offset = dateInTimeZone2.getTime() - dateInTimeZone.getTime();
-    return new Date(time + offset);
-}
+import { dateToEmTimestamp } from "../../util/util.js";
 
 export class ChargeStart extends EmDatagram {
     public static readonly COMMAND = 32775;
@@ -18,8 +11,8 @@ export class ChargeStart extends EmDatagram {
     private reservationDate: Date;
     private startType: number = 1;
     private chargeType: number = 1;
-    private param1MaxDurationMinutes?: number;
-    private param2MaxEnergyKWh?: number;
+    private maxDurationMinutes?: number;  // param 1
+    private maxEnergyKWh?: number;        // param 2
     private param3: number = 65535;
     private maxElectricity: number;
 
@@ -46,7 +39,7 @@ export class ChargeStart extends EmDatagram {
         // 44 - 45 	chargeParam3 u16    always 65535
         // 46       maxElectricity u8   in amps
 
-        const startDate = convertTimezone(this.reservationDate || new Date(), 'Asia/Shanghai', Intl.DateTimeFormat().resolvedOptions().timeZone)
+        // const startDate = convertTimezone(this.reservationDate || new Date(), 'Asia/Shanghai', Intl.DateTimeFormat().resolvedOptions().timeZone);
 
         const buffer = Buffer.alloc(47);
         buffer.writeUInt8(this.lineId || 1, 0);
@@ -54,11 +47,11 @@ export class ChargeStart extends EmDatagram {
         const chargeId = this.chargeId || new Date().toISOString().replace(/\D/g, "").slice(0, 12) + Math.floor(Math.random() * 10000).toString().padStart(4, "0");
         buffer.write(chargeId, 17, 16, "ascii");
         buffer.writeUInt8(this.reservationDate?.getTime() > now ? 1 : 0, 33);
-        buffer.writeUInt32BE(startDate?.getTime() / 1000 || now / 1000, 34);
+        buffer.writeUInt32BE(dateToEmTimestamp(this.reservationDate || new Date()), 34);
         buffer.writeUInt8(this.startType, 38);
         buffer.writeUInt8(this.chargeType, 39);
-        buffer.writeUInt16BE(this.param1MaxDurationMinutes || 65535, 40);
-        buffer.writeUInt16BE((this.param2MaxEnergyKWh ? Math.floor(this.param2MaxEnergyKWh * 100) : undefined) || 65535, 42);
+        buffer.writeUInt16BE(this.maxDurationMinutes || 65535, 40);
+        buffer.writeUInt16BE((this.maxEnergyKWh ? Math.floor(this.maxEnergyKWh * 100) : undefined) || 65535, 42);
         buffer.writeUInt16BE(this.param3, 44);
         buffer.writeUInt8(this.maxElectricity, 46);
 
@@ -108,16 +101,16 @@ export class ChargeStart extends EmDatagram {
     }
 
     public setMaxDurationMinutes(maxDurationMinutes?: number): this {
-        this.param1MaxDurationMinutes = maxDurationMinutes;
+        this.maxDurationMinutes = maxDurationMinutes;
         return this;
     }
 
     public setMaxEnergyKWh(maxEnergyKWh?: number): this {
-        this.param2MaxEnergyKWh = maxEnergyKWh;
+        this.maxEnergyKWh = maxEnergyKWh;
         return this;
     }
 
-    public setMaxElectricity(maxElectricity: number): this {
+    public setMaxElectricity(maxElectricity?: number): this {
         this.maxElectricity = maxElectricity;
         return this;
     }

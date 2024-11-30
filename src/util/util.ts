@@ -1,4 +1,4 @@
-import { EmEvseErrorState } from "./types.js";
+import { EmEvseError } from "./types.js";
 
 /**
  * Encode a password to a base64 string with some slight obfuscation.
@@ -31,6 +31,35 @@ export function decodePassword(encodedPassword?: string): string|undefined {
     return outputBuf.toString("ascii");
 }
 
+export function equals(a: any, b: any): boolean {
+    if (a === b) return true;
+    if (typeof a !== typeof b) return false;
+
+    if (Array.isArray(a) && Array.isArray(b)) {
+        if (a.length !== b.length) return false;
+        for (let i = 0; i < a.length; i++) {
+            if (!equals(a[i], b[i])) return false;
+        }
+        return true;
+    }
+
+    if (typeof a === 'object') {
+        const aKeys = Object.keys(a);
+        const bKeys = Object.keys(b);
+        if (aKeys.length !== bKeys.length) return false;
+        for (const key of aKeys) {
+            if (!equals(a[key], b[key])) return false;
+        }
+        return true;
+    }
+
+    if (a instanceof Date && b instanceof Date) {
+        return a.getTime() === b.getTime();
+    }
+
+    return false;
+}
+
 /**
  * Update a property of an object if the new value is different from the old value,
  * and return whether the property was updated.
@@ -40,7 +69,7 @@ export function decodePassword(encodedPassword?: string): string|undefined {
  * @returns True if the property was updated, false if the new value is the same as the old value.
  */
 export function update(obj: object, prop: string, newValue: any): boolean {
-    if (obj[prop] === newValue) {
+    if (equals(obj[prop], newValue)) {
         return false;
     }
     obj[prop] = newValue;
@@ -87,7 +116,6 @@ export function sleep(ms: number) {
  * @returns True if the values are equal, false otherwise.
  */
 export function enumEquals<E extends {[key: number]: string | number}>(a: keyof E | number, b: keyof E | number, enumType: E): boolean {
-    console.log('enumEquals a:' + typeof a, a, 'b:' + typeof b, b, 'enumType:', enumType);
     if (typeof a === typeof b) {
         return a === b;
     }
@@ -132,19 +160,47 @@ export function enumStr<E extends {[key: number]: string | number}>(value: keyof
     return undefined;
 }
 
-export function parseErrorState(errorState: number): EmEvseErrorState[] {
-    const states: EmEvseErrorState[] = [];
+export function parseErrorState(errorState: number): EmEvseError[] {
+    const errors: EmEvseError[] = [];
     for (let i = 0; i < 32; i++) {
         if (errorState & (1 << i)) {
-            states.push(i);
+            errors.push(i);
         }
     }
-    return states;
+    return errors;
 }
 
 export function nowStr() {
     const now = new Date();
     return `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()} ${now.getHours()}:${('0' + now.getMinutes()).slice(-2)}:${('0' + now.getSeconds()).slice(-2)}`;
+}
+
+function convertTimezone(date: Date, timeZone: string, timeZone2: string): Date {
+    const time = date.getTime();
+    const dateInTimeZone = new Date(date.toLocaleString('en-US', { timeZone }));
+    const dateInTimeZone2 = new Date(date.toLocaleString('en-US', { timeZone: timeZone2 }));
+    const offset = dateInTimeZone2.getTime() - dateInTimeZone.getTime();
+    return new Date(time + offset);
+}
+
+
+const LOCAL_TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
+const EM_TIMEZONE = 'Asia/Shanghai';
+
+export function dateToEmTimestamp(date: Date): number {
+    const time = date.getTime();
+    const dateInLocalTimeZone = new Date(date.toLocaleString('en-US', { timeZone: LOCAL_TIMEZONE }));
+    const dateInEmTimeZone = new Date(date.toLocaleString('en-US', { timeZone: EM_TIMEZONE }));
+    const offset = dateInEmTimeZone.getTime() - dateInLocalTimeZone.getTime();
+    return (time + offset) / 1000;
+}
+
+export function emTimestampToDate(timestamp: number): Date {
+    const date = new Date(timestamp * 1000);
+    const dateInLocalTimeZone = new Date(date.toLocaleString('en-US', { timeZone: LOCAL_TIMEZONE }));
+    const dateInEmTimeZone = new Date(date.toLocaleString('en-US', { timeZone: EM_TIMEZONE }));
+    const offset = dateInEmTimeZone.getTime() - dateInLocalTimeZone.getTime();
+    return new Date(date.getTime() + offset);
 }
 
 export function logInfo(msg: string) {
