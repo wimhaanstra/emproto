@@ -58,9 +58,17 @@ export interface EmEvse {
     login(password?: string): Promise<void>;
 
     /**
-     * Get the current state of the EVSE.
+     * Get the current state (at protocol level) of the EVSE. This is only available when the EVSE is online
+     * and logged in; otherwise it will return undefined.
      */
-    getState(): EmEvseState;
+    getState(): EmEvseState|undefined;
+
+    /**
+     * Get the current meta state of the EVSE. This is a computed normalized state based on various aspects
+     * of the EVSE's online and login state and its operational state fields. Offered because most apps won't
+     * need to know about the protocol-level details, but just want to show some UI.
+     */
+    getMetaState(): EmEvseMetaState;
 
     /**
      * Get info about the current charging session.
@@ -394,6 +402,34 @@ export type EmEvseState = {
     outputState: EmEvseOutputState;
     errors: EmEvseError[];
 };
+
+export enum EmEvseMetaState {
+    /**
+     * EVSE is offline, i.e. no datagrams have been received from it recently.
+     */
+    OFFLINE = 0,
+    /**
+     * EVSE is online but the library isn't logged in.
+     */
+    NOT_LOGGED_IN = 1,
+    /**
+     * EVSE is online and logged in but not charging or connected.
+     */
+    IDLE = 2,
+    /**
+     * EVSE is online and connected but not charging. If a charging session is planned, the meta state will be CONNECTED.
+     * In this state, a chargeStart call can be made to start or plan a charging session.
+     */
+    CONNECTED = 3,
+    /**
+     * EVSE is currently charging.
+     */
+    CHARGING = 4,
+    /**
+     * EVSE is in an error state. The error(s) can be found in getState().errors.
+     */
+    ERROR = 5
+}
 
 export type EmEvseCurrentCharge = {
     port: number;

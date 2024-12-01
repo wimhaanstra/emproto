@@ -63,7 +63,7 @@ node index.js
 ```
 
 Use Ctrl+C to exit your app.
-This example app doesn't log in to any chargers so it'll show only basic info (no lines info), unless another app has saved the password to `~/evses.json`.
+This example app doesn't log in to any chargers so it'll show only basic info (no state info), unless another app has saved the password to `~/evses.json`.
 Read on to see how to login and get more info from a charger, and how to control it.
 
 ## Requirements
@@ -364,7 +364,7 @@ npx tsx clitest EC311S=123456
 ```
 "EC311S" in this example is the model name of the charger, but you can use any part of the serial, brand or model. The CLI runner will try to log in using the 6-digit password on the first matching EVSE.
 If login is successful, the password will also be persisted in ~/evses.json, so you can just run `npx tsx clitest` next time and see the EVSE's detail info without needing to specify the password again.
-For EVSEs that the CLI runner can log in to, it will also print the "lines" (plugs, connectors) that are available on the EVSE with that charging status. Most will have just one line.
+For EVSEs that the CLI runner can log in to, it will also print the state and the current charging session info.
 
 To show info of a specific EVSE, use the same type of filter as for login:
 ```bash

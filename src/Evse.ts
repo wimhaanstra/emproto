@@ -11,7 +11,10 @@ import {
     type EmEvseConfig,
     EmEvseCurrentCharge,
     type EmEvseEvent,
+    EmEvseGunState,
     type EmEvseInfo,
+    EmEvseMetaState,
+    EmEvseOutputState,
     type EmEvseState,
     isEmEvseInfo,
     type Language,
@@ -106,7 +109,8 @@ export default class Evse implements EmEvse {
     }
 
     public isLoggedIn(): boolean {
-        return this.lastActiveLogin !== undefined
+        return this.isOnline()
+            && this.lastActiveLogin !== undefined
             && this.lastActiveLogin.getTime() > (Date.now() - (1000 * 15));
     }
 
@@ -118,8 +122,19 @@ export default class Evse implements EmEvse {
         return this.password && this.password === password;
     }
 
-    public getState(): EmEvseState {
+    public getState(): EmEvseState|undefined {
+        if (!this.isLoggedIn()) return undefined;
         return this.state;
+    }
+
+    public getMetaState(): EmEvseMetaState {
+        if (!this.isOnline()) return EmEvseMetaState.OFFLINE;
+        if (!this.isLoggedIn()) return EmEvseMetaState.NOT_LOGGED_IN;
+        if (!this.state) return EmEvseMetaState.IDLE;
+        if (this.state.errors?.length > 0) return EmEvseMetaState.ERROR;
+        if (this.state.outputState === EmEvseOutputState.CHARGING) return EmEvseMetaState.CHARGING;
+        if (this.state.gunState !== EmEvseGunState.DISCONNECTED) return EmEvseMetaState.CONNECTED;
+        return EmEvseMetaState.IDLE;
     }
 
     public getCurrentCharge(): EmEvseCurrentCharge | undefined {
@@ -552,7 +567,7 @@ export default class Evse implements EmEvse {
 
     public toString(): string {
         const model = [ this.info.brand, this.info.model ].filter(Boolean).join(" ");
-        return `[${this.info.serial}${model ? " " + model : ""} @ ${this.info.ip}]`;
+        return `[${this.info.serial}${model ? " " + model : ""} @ ${this.info.ip} ${EmEvseMetaState[this.getMetaState()]}]`;
     }
 
     private updateOfflineCharging(datagram: SetAndGetOffLineChargeResponse) {
