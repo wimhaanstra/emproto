@@ -21,6 +21,13 @@ export interface EmEvse {
     fetchConfig(orCachedUntilSeconds?: number): Promise<EmEvseConfig>;
 
     /**
+     * Get a label for the EVSE. If the name is known (need to be logged in to get the config with name), then
+     * that is returned. If no name is known, the brand and model are returned. If no info is known, serial is
+     * returned.
+     */
+    getLabel(): string;
+
+    /**
      * Get the last time a datagram was received from the EVSE.
      */
     getLastSeen(): Date;
@@ -413,14 +420,15 @@ export enum EmEvseMetaState {
      */
     NOT_LOGGED_IN = 1,
     /**
-     * EVSE is online and logged in but not charging or connected.
+     * EVSE is online and logged in but not charging or connected. This state is also used when initializing,
+     * when the library has just logged in but no state is determined yet.
      */
     IDLE = 2,
     /**
-     * EVSE is online and connected but not charging. If a charging session is planned, the meta state will be CONNECTED.
-     * In this state, a chargeStart call can be made to start or plan a charging session.
+     * EVSE is online and plugged in but not charging. If a charging session is planned, the meta state will be
+     * PLUGGED_IN. In this state, a chargeStart call can be made to start or plan a charging session.
      */
-    CONNECTED = 3,
+    PLUGGED_IN = 3,
     /**
      * EVSE is currently charging.
      */

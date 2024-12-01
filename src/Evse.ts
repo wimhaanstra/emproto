@@ -96,6 +96,14 @@ export default class Evse implements EmEvse {
         return this.config;
     }
 
+    public getLabel() {
+        const name = this.getConfig()?.name;
+        if (name) return name;
+        const brandAndModel = [ this.getInfo().brand, this.getInfo().model ].filter(Boolean).join(" ");
+        if (brandAndModel !== "") return brandAndModel;
+        return this.getInfo().serial;
+    }
+
     public getLastSeen(): Date {
         return this.lastSeen;
     }
@@ -133,7 +141,7 @@ export default class Evse implements EmEvse {
         if (!this.state) return EmEvseMetaState.IDLE;
         if (this.state.errors?.length > 0) return EmEvseMetaState.ERROR;
         if (this.state.outputState === EmEvseOutputState.CHARGING) return EmEvseMetaState.CHARGING;
-        if (this.state.gunState !== EmEvseGunState.DISCONNECTED) return EmEvseMetaState.CONNECTED;
+        if (this.state.gunState !== EmEvseGunState.DISCONNECTED) return EmEvseMetaState.PLUGGED_IN;
         return EmEvseMetaState.IDLE;
     }
 
