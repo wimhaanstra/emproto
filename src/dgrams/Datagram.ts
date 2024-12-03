@@ -1,4 +1,5 @@
 import { Buffer } from "node:buffer";
+import { EmDatagram } from "../util/types.js";
 
 /**
  * Base class for datagram implementations.
@@ -13,7 +14,7 @@ import { Buffer } from "node:buffer";
  *   and normalizing the values as needed. For datagrams (commands) that are only sent from manager to EVSE, this method
  *   can be no-op/empty.
  */
-export default abstract class EmDatagram {
+export default abstract class Datagram implements EmDatagram {
 
     /**
      * Implementation datagram classes must define a static `COMMAND` property.
@@ -30,7 +31,7 @@ export default abstract class EmDatagram {
     private devicePassword?: string;
 
     public getCommand(): number {
-        for (let prototype = Object.getPrototypeOf(this); prototype !== Object.prototype && prototype !== EmDatagram.prototype; prototype = Object.getPrototypeOf(prototype)) {
+        for (let prototype = Object.getPrototypeOf(this); prototype !== Object.prototype && prototype !== Datagram.prototype; prototype = Object.getPrototypeOf(prototype)) {
             if (prototype.constructor.COMMAND) {
                 return prototype.constructor.COMMAND;
             }
@@ -41,7 +42,7 @@ export default abstract class EmDatagram {
     protected abstract unpackPayload(buffer: Buffer): void;
 
     public unpack(buffer: Buffer) {
-        const payloadLength = EmDatagram.assertValidDatagram(buffer);
+        const payloadLength = Datagram.assertValidDatagram(buffer);
 
         const command = buffer.readUint16BE(19);
         if (command !== this.getCommand()) {
@@ -80,7 +81,7 @@ export default abstract class EmDatagram {
         const payload = this.packPayload();
 
         const buffer = Buffer.alloc(25 + payload.length);
-        buffer.writeUInt16BE(EmDatagram.PACKET_HEADER, 0);
+        buffer.writeUInt16BE(Datagram.PACKET_HEADER, 0);
         buffer.writeUInt16BE(buffer.length, 2);
         buffer.writeUInt8(this.keyType, 4);
         if (this.deviceSerial) {
@@ -93,7 +94,7 @@ export default abstract class EmDatagram {
         payload.copy(buffer, 21, 0, payload.length);
         const checksum = buffer.subarray(0, -4).reduce((acc, val) => (acc + val) % 0xffff, 0);
         buffer.writeUInt16BE(checksum, 25 + payload.length - 4);
-        buffer.writeUInt16BE(EmDatagram.PACKET_TAIL, 25 + payload.length - 2);
+        buffer.writeUInt16BE(Datagram.PACKET_TAIL, 25 + payload.length - 2);
         return buffer;
     }
 
@@ -106,7 +107,7 @@ export default abstract class EmDatagram {
         if (buffer.length < 25) {
             throw new Error("Invalid EmDatagram: too short");
         }
-        if (buffer.readUInt16BE(0) !== EmDatagram.PACKET_HEADER) {
+        if (buffer.readUInt16BE(0) !== Datagram.PACKET_HEADER) {
             throw new Error("Invalid EmDatagram: missing magic header");
         }
 

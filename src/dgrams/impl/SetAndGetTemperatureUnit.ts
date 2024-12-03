@@ -1,9 +1,9 @@
-import EmDatagram from "../EmDatagram.js";
+import Datagram from "../Datagram.js";
 import { Buffer } from "node:buffer";
 import { SetAndGetTemperatureUnitAction, type TemperatureUnit, TemperatureUnitMapping } from "../../util/types.js";
 import { enumStr } from "../../util/util.js";
 
-abstract class SetAndGetTemperatureUnitAbstract extends EmDatagram {
+abstract class SetAndGetTemperatureUnitAbstract extends Datagram {
     private action: SetAndGetTemperatureUnitAction;
     private temperatureUnit: TemperatureUnitMapping;
 

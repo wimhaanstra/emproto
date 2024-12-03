@@ -1,6 +1,6 @@
 import {clearTimeout} from "node:timers";
 import {Communicator} from "./Communicator.js";
-import EmDatagram from "./dgrams/EmDatagram.js";
+import Datagram from "./dgrams/Datagram.js";
 import {
     ChargeStartParams,
     ChargeStartResult,
@@ -27,7 +27,16 @@ import {
     SetAndGetTemperatureUnitAction,
     TemperatureUnit
 } from "./util/types.js";
-import {decodePassword, encodePassword, logError, logInfo, logWarning, toDate, update} from "./util/util.js";
+import {
+    decodePassword,
+    encodePassword,
+    enumEquals,
+    logError,
+    logInfo,
+    logWarning,
+    toDate,
+    update
+} from "./util/util.js";
 import {LoginAbstract, LoginConfirm, LoginResponse, RequestLogin} from "./dgrams/impl/Login.js";
 import {SingleACStatus} from "./dgrams/impl/SingleACStatus.js";
 import {SetAndGetNickName, SetAndGetNickNameResponse} from "./dgrams/impl/SetAndGetNickName.js";
@@ -49,7 +58,7 @@ import {SingleACChargingStatus} from "./dgrams/impl/SingleACChargingStatus.js";
 export default class Evse implements EmEvse {
 
     private readonly communicator: Communicator;
-    private readonly dispatchEvent: (event: EmEvseEvent, datagram?: EmDatagram) => void;
+    private readonly dispatchEvent: (event: EmEvseEvent, datagram?: Datagram) => void;
 
     private readonly info: EmEvseInfo;
     private config: EmEvseConfig;
@@ -66,7 +75,7 @@ export default class Evse implements EmEvse {
                 dispatchEvent: DispatchEvent,
                 info: EmEvseInfo | {info: object, config?: object, lastSeen?: Date|number|string, lastConfigUpdate?: Date|number|string}) {
         this.communicator = communicator;
-        this.dispatchEvent = (event: EmEvseEvent, datagram?: EmDatagram) => dispatchEvent(event, this, datagram);
+        this.dispatchEvent = (event: EmEvseEvent, datagram?: Datagram) => dispatchEvent(event, this, datagram);
 
         if (isEmEvseInfo(info)) {
             // Creating new discovered EVSE.
@@ -140,8 +149,8 @@ export default class Evse implements EmEvse {
         if (!this.isLoggedIn()) return EmEvseMetaState.NOT_LOGGED_IN;
         if (!this.state) return EmEvseMetaState.IDLE;
         if (this.state.errors?.length > 0) return EmEvseMetaState.ERROR;
-        if (this.state.outputState === EmEvseOutputState.CHARGING) return EmEvseMetaState.CHARGING;
-        if (this.state.gunState !== EmEvseGunState.DISCONNECTED) return EmEvseMetaState.PLUGGED_IN;
+        if (enumEquals(this.state.outputState, EmEvseOutputState.CHARGING, EmEvseOutputState)) return EmEvseMetaState.CHARGING;
+        if (!enumEquals(this.state.gunState, EmEvseGunState.DISCONNECTED, EmEvseGunState)) return EmEvseMetaState.PLUGGED_IN;
         return EmEvseMetaState.IDLE;
     }
 
@@ -149,7 +158,7 @@ export default class Evse implements EmEvse {
         return this.currentCharge;
     }
 
-    public sendDatagram(datagram: EmDatagram): Promise<number> {
+    public sendDatagram(datagram: Datagram): Promise<number> {
         if (datagram instanceof HeadingResponse) {
             this.lastActiveLogin = new Date();
             // lastActiveLogin is transient, so no changed event necessary. We need to re-login
@@ -192,7 +201,7 @@ export default class Evse implements EmEvse {
         return false;
     }
 
-    public update(datagram: EmDatagram): boolean {
+    public update(datagram: Datagram): boolean {
         if (datagram instanceof LoginAbstract) {
             return this.updateLogin(datagram);
         }
@@ -465,11 +474,11 @@ export default class Evse implements EmEvse {
         return changed;
     }
 
-    public async waitForResponse(command: number|number[], timeoutMillis: number): Promise<EmDatagram> {
+    public async waitForResponse(command: number|number[], timeoutMillis: number): Promise<Datagram> {
         if (typeof command === "number") command = [ command ];
         return new Promise((resolve, reject) => {
             let timeout: NodeJS.Timeout;
-            const listener = (evse: Evse, event: EmEvseEvent, datagram?: EmDatagram) => {
+            const listener = (evse: Evse, event: EmEvseEvent, datagram?: Datagram) => {
                 if (datagram && evse.info.serial === this.info.serial && command.includes(datagram.getCommand())) {
                     clearTimeout(timeout);
                     this.communicator.removeEventListener("datagram", listener);
@@ -565,7 +574,7 @@ export default class Evse implements EmEvse {
         return this.config;
     }
 
-    public setDatagramPassword(datagram: EmDatagram) {
+    public setDatagramPassword(datagram: Datagram) {
         if (this.password !== undefined) {
             datagram.setDevicePassword(this.password);
             return true;

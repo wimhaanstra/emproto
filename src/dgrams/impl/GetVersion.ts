@@ -1,7 +1,7 @@
-import EmDatagram from "../EmDatagram.js";
+import Datagram from "../Datagram.js";
 import { readString } from "../../util/util.js";
 
-class GetVersionAbstract extends EmDatagram {
+class GetVersionAbstract extends Datagram {
     private hardwareVersion: string;
     private softwareVersion: string;
     private feature: number;

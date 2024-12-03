@@ -1,6 +1,6 @@
-import EmDatagram from "../EmDatagram.js";
+import Datagram from "../Datagram.js";
 
-export class UploadLocalChargeRecord extends EmDatagram {
+export class UploadLocalChargeRecord extends Datagram {
 
     public static readonly COMMAND = 10;
 

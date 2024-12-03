@@ -1,9 +1,9 @@
-import EmDatagram from "../EmDatagram.js";
+import Datagram from "../Datagram.js";
 import { Buffer } from "node:buffer";
 import { EmEvseCurrentState, EmEvseError, EmEvseGunState, EmEvseOutputState } from "../../util/types.js";
 import { parseErrorState } from "../../util/util.js";
 
-export class SingleACStatus extends EmDatagram {
+export class SingleACStatus extends Datagram {
     public static readonly COMMAND = 4;
 
     protected packPayload() {
@@ -52,7 +52,7 @@ export class SingleACStatus extends EmDatagram {
 
 }
 
-export class SingleACStatusResponse extends EmDatagram {
+export class SingleACStatusResponse extends Datagram {
     public static readonly COMMAND = 32772;
 
     protected packPayload() {

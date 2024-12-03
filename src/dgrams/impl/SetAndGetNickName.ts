@@ -1,8 +1,8 @@
-import EmDatagram from "../EmDatagram.js";
+import Datagram from "../Datagram.js";
 import { SetAndGetNickNameAction } from "../../util/types.js";
 import { readString } from "../../util/util.js";
 
-class SetAndGetNickNameAbstract extends EmDatagram {
+class SetAndGetNickNameAbstract extends Datagram {
     private action: SetAndGetNickNameAction = SetAndGetNickNameAction.GET;    // u8
     private nickName: string; // 32 bytes
 

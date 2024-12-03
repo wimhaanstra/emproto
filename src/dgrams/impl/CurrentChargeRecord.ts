@@ -1,6 +1,6 @@
-import EmDatagram from "../EmDatagram.js";
+import Datagram from "../Datagram.js";
 
-export class CurrentChargeRecord extends EmDatagram {
+export class CurrentChargeRecord extends Datagram {
     public static readonly COMMAND = 9;
 
     public lineId: number = 1;
@@ -91,7 +91,7 @@ export class CurrentChargeRecord extends EmDatagram {
 
 }
 
-export class RequestChargeStatusRecord extends EmDatagram {
+export class RequestChargeStatusRecord extends Datagram {
     public static readonly COMMAND = 32781;
 
     protected packPayload() {
@@ -105,7 +105,7 @@ export class RequestChargeStatusRecord extends EmDatagram {
 }
 
 
-export class CurrentChargeRecordResponse extends EmDatagram {
+export class CurrentChargeRecordResponse extends Datagram {
     public static readonly COMMAND = 32777;
 
     private lineId: number = 1;  // u8

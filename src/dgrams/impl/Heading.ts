@@ -1,7 +1,7 @@
-import EmDatagram from "../EmDatagram.js";
+import Datagram from "../Datagram.js";
 import { Buffer } from "node:buffer";
 
-export class Heading extends EmDatagram {
+export class Heading extends Datagram {
     public static readonly COMMAND = 0x0003;
 
     protected packPayload() {
@@ -13,7 +13,7 @@ export class Heading extends EmDatagram {
     }
 }
 
-export class HeadingResponse extends EmDatagram {
+export class HeadingResponse extends Datagram {
     public static readonly COMMAND = 32771;
 
     protected packPayload(): Buffer {

@@ -1,7 +1,7 @@
-import EmDatagram from "../EmDatagram.js";
+import Datagram from "../Datagram.js";
 import { Buffer } from "node:buffer";
 
-export class SetAndGetServiceFeeResponse extends EmDatagram {
+export class SetAndGetServiceFeeResponse extends Datagram {
 
     public static readonly COMMAND = 0x0105;
 

@@ -1,8 +1,8 @@
-import EmDatagram from "../EmDatagram.js";
+import Datagram from "../Datagram.js";
 import {SystemTimeAction} from "../../util/types.js";
 import {Buffer} from "node:buffer";
 
-abstract class SystemTimeAbstract extends EmDatagram {
+abstract class SystemTimeAbstract extends Datagram {
 
     public action: SystemTimeAction;
 

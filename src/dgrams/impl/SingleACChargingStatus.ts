@@ -1,9 +1,9 @@
-import EmDatagram from "../EmDatagram.js";
+import Datagram from "../Datagram.js";
 import { Buffer } from "node:buffer";
 import { emTimestampToDate } from "../../util/util.js";
 import { EmEvseCurrentState } from "../../util/types.js";
 
-export abstract class SingleACChargingStatus extends EmDatagram {
+export abstract class SingleACChargingStatus extends Datagram {
 
     public port: number;
     public currentState: EmEvseCurrentState;    // 13=finished, 14=charging // EmEvseCurrentState

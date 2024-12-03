@@ -1,7 +1,7 @@
-import EmDatagram from "../EmDatagram.js";
+import Datagram from "../Datagram.js";
 import { Buffer } from "node:buffer";
 
-export class RequestStatusRecord extends EmDatagram {
+export class RequestStatusRecord extends Datagram {
 
     public static readonly COMMAND = 13;
 

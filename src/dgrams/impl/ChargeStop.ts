@@ -1,6 +1,6 @@
-import EmDatagram from "../EmDatagram.js";
+import Datagram from "../Datagram.js";
 
-export class ChargeStop extends EmDatagram {
+export class ChargeStop extends Datagram {
     public static readonly COMMAND = 32776;
 
     private lineId: number = 1;
@@ -50,7 +50,7 @@ export class ChargeStop extends EmDatagram {
 
 }
 
-export class ChargeStopResponse extends EmDatagram {
+export class ChargeStopResponse extends Datagram {
     public static readonly COMMAND = 8;
 
     private lineId?: number;

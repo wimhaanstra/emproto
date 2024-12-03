@@ -1,7 +1,7 @@
-import EmDatagram from "../EmDatagram.js";
+import Datagram from "../Datagram.js";
 import { Buffer } from "node:buffer";
 
-export abstract class LoginAbstract extends EmDatagram {
+export abstract class LoginAbstract extends Datagram {
     private type: number; // u8
     private brand: string; // String
     private model: string; // String
@@ -70,7 +70,7 @@ export class LoginResponse extends LoginAbstract {
     public static readonly COMMAND = 0x0002;
 }
 
-export class RequestLogin extends EmDatagram {
+export class RequestLogin extends Datagram {
     public static readonly COMMAND = 0x8002;
 
     protected packPayload() {
@@ -82,7 +82,7 @@ export class RequestLogin extends EmDatagram {
     }
 }
 
-export class LoginConfirm extends EmDatagram {
+export class LoginConfirm extends Datagram {
     public static readonly COMMAND = 0x8001;
 
     protected packPayload() {

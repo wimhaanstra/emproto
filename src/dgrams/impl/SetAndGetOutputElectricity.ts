@@ -1,7 +1,7 @@
-import EmDatagram from "../EmDatagram.js";
+import Datagram from "../Datagram.js";
 import { SetAndGetOutputElectricityAction } from "../../util/types.js";
 
-abstract class SetAndGetOutputElectricityAbstract extends EmDatagram {
+abstract class SetAndGetOutputElectricityAbstract extends Datagram {
     private action: SetAndGetOutputElectricityAction;    // u8
     private electricity: number; // u8
 

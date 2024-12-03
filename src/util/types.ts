@@ -1,7 +1,19 @@
-import Evse from "Evse.js";
-import EmDatagram from "dgrams/EmDatagram.js";
+export interface EmCommunicator {
+    start(): Promise<number>;
+    stop(): void;
+    isRunning(): boolean;
 
-export { Communicator } from "../Communicator.js";
+    loadEvses(evses: any): EmEvse[];
+    saveEvses(file: string): void;
+
+    getEvses(): EmEvse[];
+    getEvse(serial: string|null|undefined): EmEvse|undefined;
+    getEvseOrThrow(serial: string|null|undefined): EmEvse;
+    getEvseByIp(ip: string|null|undefined): EmEvse|undefined;
+
+    addEventListener(types: EmEvseEvent|EmEvseEvent[], handler: EmEvseEventHandler): this;
+    removeEventListener(types: EmEvseEvent|EmEvseEvent[], handler: EmEvseEventHandler | undefined): this;
+}
 
 export interface EmEvse {
     /**
@@ -272,9 +284,13 @@ export const DEFAULT_EM_COMMUNICATOR_CONFIG: EmCommunicatorConfig = {
     dumpDatagrams: false
 };
 
+export interface EmDatagram {
+    getCommand(): number;
+}
+
 export const EmEvseEvents = ["added", "changed", "removed", "datagram"] as const;
 export type EmEvseEvent = typeof EmEvseEvents[number];
-export type EmEvseEventHandler = (evse: Evse, event: EmEvseEvent, datagram?: EmDatagram) => void;
+export type EmEvseEventHandler = (evse: EmEvse, event: EmEvseEvent, datagram?: EmDatagram) => void;
 
 export enum EmEvseGunState {
     UNKNOWN_0 = 0,
@@ -552,7 +568,7 @@ export enum LanguageMapping {
 }
 export type Language = keyof typeof LanguageMapping;
 
-export type DispatchEvent = (event: EmEvseEvent, evse: Evse, datagram?: EmDatagram) => void;
+export type DispatchEvent = (event: EmEvseEvent, evse: EmEvse, datagram?: EmDatagram) => void;
 
 export enum ChargeStartErrorReason {
     NO_ERROR = 0,

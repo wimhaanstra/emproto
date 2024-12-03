@@ -1,8 +1,8 @@
-import EmDatagram from "../EmDatagram.js";
+import Datagram from "../Datagram.js";
 import { ChargeStartErrorReason, ChargeStartReservationResult } from "../../util/types.js";
 import { dateToEmTimestamp } from "../../util/util.js";
 
-export class ChargeStart extends EmDatagram {
+export class ChargeStart extends Datagram {
     public static readonly COMMAND = 32775;
 
     private lineId?: number = 1;
@@ -117,7 +117,7 @@ export class ChargeStart extends EmDatagram {
 
 }
 
-export class ChargeStartResponse extends EmDatagram {
+export class ChargeStartResponse extends Datagram {
     public static readonly COMMAND = 7;
 
     private lineId: number;

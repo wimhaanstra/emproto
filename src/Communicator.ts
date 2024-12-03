@@ -5,6 +5,7 @@ import { homedir } from "node:os";
 import { logError, logInfo, logWarning, dumpDebug } from "./util/util.js";
 import { parseDatagrams } from "./dgrams/index.js";
 import {
+    EmCommunicator,
     DEFAULT_EM_COMMUNICATOR_CONFIG,
     EmCommunicatorConfig,
     EmEvseEvent,
@@ -12,7 +13,7 @@ import {
     EmEvseEvents
 } from "./util/types.js";
 import Evse from "./Evse.js";
-import EmDatagram from "./dgrams/EmDatagram.js";
+import Datagram from "./dgrams/Datagram.js";
 import { Heading, HeadingResponse } from "./dgrams/impl/Heading.js";
 import { Login } from "./dgrams/impl/Login.js";
 import { SingleACStatus, SingleACStatusResponse } from "./dgrams/impl/SingleACStatus.js";
@@ -22,7 +23,7 @@ type EmEvseEventListener = {
     handler: EmEvseEventHandler;
 };
 
-export class Communicator {
+export class Communicator implements EmCommunicator {
 
     public readonly config: EmCommunicatorConfig;
 
@@ -279,7 +280,7 @@ export class Communicator {
         return this.evses.find(evse => evse.getInfo().ip === ip);
     }
 
-    private updateEvse(datagram: EmDatagram, rInfo: RemoteInfo): Evse {
+    private updateEvse(datagram: Datagram, rInfo: RemoteInfo): Evse {
         const serial = datagram.getDeviceSerial();
         if (!serial) return;
         let evse = this.getEvse(serial);
@@ -304,7 +305,7 @@ export class Communicator {
         return evse;
     }
 
-    public send(datagram: EmDatagram, evse: Evse): Promise<number> {
+    public send(datagram: Datagram, evse: Evse): Promise<number> {
         if (!this.isRunning()) {
             throw new Error("EmCommunicator is not running");
         }
@@ -376,7 +377,7 @@ export class Communicator {
         return this;
     }
 
-    protected dispatchEvent(event: EmEvseEvent, evse: Evse, datagram?: EmDatagram) {
+    protected dispatchEvent(event: EmEvseEvent, evse: Evse, datagram?: Datagram) {
         this.listeners.forEach(listener => {
             if (listener.types.includes(event)) try {
                 listener.handler(evse, event, datagram);

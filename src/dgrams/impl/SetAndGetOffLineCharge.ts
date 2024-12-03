@@ -1,8 +1,8 @@
-import EmDatagram from "../EmDatagram.js";
+import Datagram from "../Datagram.js";
 import { OffLineChargeAction, type OffLineChargeStatus, OffLineChargeStatusMapping } from "../../util/types.js";
 import { enumStr } from "../../util/util.js";
 
-abstract class SetAndGetOffLineChargeAbstract extends EmDatagram {
+abstract class SetAndGetOffLineChargeAbstract extends Datagram {
     private status: OffLineChargeStatusMapping;
     private action: OffLineChargeAction;
 

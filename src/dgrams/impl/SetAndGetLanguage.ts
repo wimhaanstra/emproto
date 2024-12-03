@@ -1,8 +1,8 @@
-import EmDatagram from "../EmDatagram.js";
+import Datagram from "../Datagram.js";
 import { type Language, LanguageMapping, SetAndGetLanguageAction } from "../../util/types.js";
 import { enumStr } from "../../util/util.js";
 
-abstract class SetAndGetLanguageAbstract extends EmDatagram {
+abstract class SetAndGetLanguageAbstract extends Datagram {
 
     private action: SetAndGetLanguageAction = SetAndGetLanguageAction.GET;
 

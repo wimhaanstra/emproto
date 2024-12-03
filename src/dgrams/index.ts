@@ -1,5 +1,5 @@
 import { Buffer } from "node:buffer";
-import EmDatagram from "./EmDatagram.js";
+import Datagram from "./Datagram.js";
 import NotEmDatagramError from "../errors/NotEmDatagramError.js";
 
 import { Login, LoginResponse, RequestLogin, LoginConfirm } from "./impl/Login.js";
@@ -74,14 +74,14 @@ const emDatagramTypesByCommand = emDatagramTypes.reduce((acc, emDatagramType) =>
         throw new Error(`Invalid EmDatagram ${emDatagramType.name}: duplicate command number ${emDatagramType.COMMAND} also in use by ${existing.name}`);
     }
     return acc.set(emDatagramType.COMMAND, emDatagramType);
-}, new Map<number, typeof EmDatagram>());
+}, new Map<number, typeof Datagram>());
 
-export function parseDatagrams(buffer: Buffer): EmDatagram[] {
-    const datagrams: EmDatagram[] = [];
+export function parseDatagrams(buffer: Buffer): Datagram[] {
+    const datagrams: Datagram[] = [];
     while (buffer.length >= 25) {
         // We only do the simple length and header check here, so we can read the command number.
         // Further checks are done when unpacking the specific implementation.
-        if (buffer.readUInt16BE(0) !== EmDatagram.PACKET_HEADER) {
+        if (buffer.readUInt16BE(0) !== Datagram.PACKET_HEADER) {
             throw new NotEmDatagramError("Missing magic header for packet: " + buffer.toString("hex"));
         }
 
