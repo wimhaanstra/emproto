@@ -457,25 +457,62 @@ export enum EmEvseMetaState {
 
 export type EmEvseCurrentCharge = {
     port: number;
+    /**
+     * The current state of the charging session. Seems to correspond to the EVSE's getState().currentState field.
+     */
     currentState: EmEvseCurrentState;
+    /**
+     * Identifier of the charging session, as specified in the chargeStart call.
+     */
     chargeId: string;
     startType: number;
     chargeType: number;
+    /**
+     * Maximum duration (in minutes) the charging session is allowed to last, as specified in the chargeStart call.
+     */
     maxDurationMinutes?: number;
+    /**
+     * Maximum energy (in kWh) the charging session is allowed to deliver, as specified in the chargeStart call.
+     */
     maxEnergyKWh?: number;
     /**
      * When the charging session is planned to be started.
      */
     reservationDate: Date;
+    /**
+     * Identifier of the user who started or planned the session.
+     */
     userId: string;
+    /**
+     * Maximum electricity (in amps) the EVSE will deliver during the charging session.
+     */
     maxElectricity: number;
     /**
      * When the charging session was entered (started immediately or planned to be started later, at reservationDate).
      */
     startDate: Date;
+    /**
+     * How long (in seconds) the session has taken.
+     * - For a planned session (currentState == CHARGING_RESERVATION), this will be 0.
+     * - For active sessions (currentState == CHARGING), this will be updated regularly (about once every 10 seconds).
+     * - For finished sessions (currentState == neither of the above), this will be the duration of that last session.
+     */
     durationSeconds: number;
+    /**
+     * The (cumulative) kWh counter value at the start of the session. This field is only set for active and planned
+     * sessions (currentState == CHARGING or CHARGING_RESERVATION). Once a session finishes, it will be zero.
+     */
     startKWhCounter: number;
+    /**
+     * The current (cumulative) kWh counter value. This field is always set to the current value, which for a finished
+     * session (since a fresh (planned) session will be a fresh current charge object) will be the final value of that
+     * last session.
+     */
     currentKWhCounter: number;
+    /**
+     * The amount of energy (in kWh) delivered during the session. This will be zero for a planned session, or the
+     * actual delivered energy for an active or finished session.
+     */
     chargeKWh: number;
     chargePrice: number;
     feeType: number;

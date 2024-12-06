@@ -718,12 +718,13 @@ export default class Evse implements EmEvse {
 
     public async chargeStart(params: ChargeStartParams = {}): Promise<ChargeStartResult> {
         const maxAmps = params.maxAmps || this.config.maxElectricity;
-        if (!maxAmps || maxAmps < 6 || maxAmps > 32) {
-            throw new Error(`${maxAmps ? 'Invalid' : 'No'} amps value specified to start charging and none available from configuration.`);
-        }
-
-        if (maxAmps !== this.config.maxElectricity) {
-            await this.setMaxElectricity(maxAmps);
+        if (!maxAmps) {
+            throw new Error("No maxAmps value specified for chargeStart, and none available from configuration.");
+        } else {
+            const evseMaxAmps = this.getInfo().maxElectricity || 32;
+            if (maxAmps < 6 || maxAmps > evseMaxAmps) {
+                throw new Error(`Invalid maxAmps value ${maxAmps} specified for chargeStart; valid range is 6-${evseMaxAmps}A`);
+            }
         }
 
         const chargeStart = new ChargeStart()
@@ -739,6 +740,14 @@ export default class Evse implements EmEvse {
 
         if (response.getErrorReason() || !successReservationResults.includes(response.getReservationResult())) {
             throw new ChargeStartError(response);
+        }
+
+        // If a different maxAmps was requested than the currently configured value, then update the configuration.
+        // Don't fail the chargeStart if this config write fails because charging has started; just log any error.
+        if (maxAmps !== this.config.maxElectricity) {
+            this.setMaxElectricity(maxAmps).catch(error => {
+                logError(`Failed to change maxElectricity config to ${maxAmps}A after successful chargeStart for EVSE ${this.info.serial}: ${error.message}. The EVSE will still have the old configured value for subsequent charges that don't explicitly set maxAmps, and for other apps.`);
+            });
         }
 
         return {

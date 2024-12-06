@@ -6,7 +6,7 @@ This library also includes a small [CLI test runner](#cli-test-runner) which you
 
 The library was developed and tested using a Telestar EC311S. Since the other brands use the same app, it may work with them as well,
 although there seem to be some subtle differences in supported datagrams and their formats/lengths. Use at your own risk. If something
-doesn't work, please set `dumpDatagrams: true` in the communicator constructor `config` parameter in order to see what data is received;
+doesn't work, please set `dumpDatagrams: true` in the createCommunicator `config` parameter in order to see what data is received;
 this may help in debugging.
 
 This library doesn't do any bluetooth; it is assumed that you have set up a Wi-Fi connection on your charger using the OEM app, and it is
@@ -73,15 +73,16 @@ Read on to see how to login and get more info from a charger, and how to control
 
 ## Library usage
 
-### Communicator class
+### Communicator
 
-The `Communicator` class is the entry point to the library, keeping track of EVSE instances and communicating over the network.
+The `EmCommunicator` interface (implemented by an internal `Communicator` class) is the entry point to the library, keeping track of EVSE instances and communicating over the network.
+You can create a communicator instance using the `createCommunicator` factory function exported by the main library index file.
 
 ```typescript
 import { createCommunicator } from "emproto";
 
 // Instantiate a communicator.
-const communicator = createCommunicator();
+const communicator = createCommunicator();  // communicator instanceof EmCommunicator
 
 // Listen for events.
 communicator.addEventListener(["added", "changed", "removed"], (evse, event) => {
@@ -112,11 +113,12 @@ await communicator.start();
 // Get a list of EVSEs currently in the communicator's list.
 communicator.getEvses().forEach(evse => {
     // Do something with the EVSE.
+    // evse instanceof EmEvse
 });
 
 // Or get a specific EVSE by serial (which is the unique identifier of an EVSE).
 // Returns undefined if there is no EVSE with given serial.
-const evse = communicator.getEvse('1234567890');
+const evse = communicator.getEvse('1234567890'); // evse instanceof EmEvse
 
 // When your app is done, stop the communicator.
 communicator.stop();
@@ -125,12 +127,12 @@ communicator.stop();
 communicator.saveEvses("~/evses.json");
 ```
 
-### EVSE class
+### EVSE
 
-The `Evse` class represents a single charger and exposes the functionality to read and interact with it.
-You can obtain `Evse` class instances from the `Communicator`.
+The `EmEvse` interface (implemented by an internal class `Evse`) represents a single charger and exposes the functionality to read and interact with it.
+You can obtain `EmEvse` instances from the communicator.
 
-#### Getting EVSE info and configuration
+#### Getting EVSE basic info
 
 ```typescript
 import { EmEvseInfo, EmEvseConfig } from "emproto/types";
@@ -145,24 +147,6 @@ console.log(`Brand and model: ${info.brand} ${info.model}`);
 console.log(`Software version: ${info.softwareVersion}`);
 console.log(`Maximum total supported output power: ${info.maxPower} watts`);
 console.log(`Maximum supported output current per phase: ${info.maxElectricity} amps`);
-
-// Get the configuration data of an EVSE. This info is only available when logged in,
-// and is retrieved by the communicator immediately after a valid login.
-const config = evse.getConfig();
-
-// Config is an EmEvseConfig instance.
-console.log(`Name: ${config.name}`);
-console.log(`Temperature unit: ${config.temperatureUnit}`);
-console.log(`Language: ${config.language}`);
-console.log(`Offline charging: ${config.offLineCharge}`);
-console.log(`Configured maximum current per phase: ${config.maxElectricity}`);
-// Note: config.maxElectricity is not actually used directly by the EVSE for charging
-// sessions; it seems to just be a way to persist the user's preference on the EVSE so
-// that various apps can share it. The actual current limit for charging is passed as a
-// parameter to chargeStart. Your app should default to this configured maxElectricity
-// when presenting the user with options to start a charging session. It should also
-// update this configuration field if the user changed the current limit when starting
-// a session, so other apps will know about it and can also use that limit.
 ```
 
 #### Logging in
@@ -189,60 +173,129 @@ fired for the EVSE.
 ```typescript
 import { EmEvseState } from "emproto/types";
 
-const state = evse.getState();
+const state = evse.getState();  // state instanceof EmEvseState
 
 // State fields.
 console.log(`State: ${state.currentState}`); // See EmEvseCurrentState enum
 console.log(`Gun state: ${state.gunState}`); // See EmEvseGunState enum
 console.log(`Charging state: ${state.outputState}`); // See EmEvseOutputState enum
 
+// Meta state: what things an app can effectively do with an EVSE depends on the above three
+// protocol-level states. However most apps won't be interested in all protocol-level state detail
+// (doing many switch cases or if-else branches), and will just want to know the overall state of
+// the EVSE, e.g. to display their UI or know if they can start a charge. For this common use case,
+// the library exposes a meta state (computed from the above states) that is a single enum which
+// gives the overall state, abstracting away the protocol-level states. It is expected and
+// intended that most apps will only ever need this meta state and won't need to check the
+// separate protocol-level state fields. See EmEvseMetaState enum for possible values.
+console.log(`Meta state: ${evse.getMetaState()}`);
+```
+
+#### Electricity metering
+
+The `EmEvseState` structure offers the current power output (across all phases) in watts, as well
+as current voltages and amps per phase.
+
+```typescript
+import { EmEvseState } from "emproto/types";
+
+const state = evse.getState();  // state instanceof EmEvseState
+
 // Power across all phases.
 console.log(`Current power: ${state.currentPower} W`);
-// Volts and amps per phase (l2 and l3 also available). Amps obviously will only be nonzero when charging.
+// Volts and amps per phase (l2 and l3 also available).
 console.log(`Current voltage (phase L1): ${state.l1Voltage} V`);
 console.log(`Current amps (phase L1): ${state.l1Electricity} A`);
+```
 
-// Temperatures. There are two values, inner and outer, but they may be equal if the EVSE only
-// has one sensor (or outer temp may be omitted).
+#### Temperature
+
+The protocol specifies two temperature values: inner and outer.
+On my Telestar, both values are set to the same value, which is the inner temperature. The OEM app also seems to
+only ever use (show) the inner temperature. Expect the inner temperature to always be set; the outer temperature
+could be empty, or set to the same value as the inner temperature.
+
+The values of these fields are always in degrees Celsius; your app can consult the `getConfig().temperatureUnit`
+field to check if that is the user-preferred unit, or convert to Fahrenheit for display if needed.
+
+```typescript
+const state = evse.getState();  // state instanceof EmEvseState
+
 console.log(`Inner temperature: ${state.innerTemp} °C`);
 console.log(`Outer temperature: ${state.outerTemp} °C`);
+```
 
+#### EVSE errors
+
+> [!NOTE]  
+> The protocol specifies a 32-bit integer field for errors. The OEM app has a funny way to decode errors from this
+> field: it converts the number to a binary string (of 32 zeroes and ones) and then finds the index of the first '1'
+> character. And judging by the error values (mapping to a bit position in this field), it seems that this field is
+> actually a bitfield that could have more than one error flag set simultaneously. The OEM app's way of decoding via
+> a binary string is not just funny as the same index could be found more easily using bitwise arithmetic, but
+> finding the index of the first '1' character also means that it will only ever detect the first set error,
+> ignoring the rest of the bits in the 32-bit integer field.
+
+The library instead will test each of the 32 bits and will return an array of error codes (`EmEvseErrorState` values),
+one for each set bit. You can test for errors by checking whether the array isn't empty (or use the meta state which
+will return `ERROR` if at least one error is set, i.e. the array is not empty).
+
+```typescript
 // Errors list as an array of EmEvseErrorState values. May this array forever remain empty.
-console.log(`Errors: ${state.errors.join(", ")}`);
+console.log(`Errors: ${state.errors.length === 0 ? "none!" : state.errors.join(", ")}`);
 ```
 
 #### Getting configuration
 
+`EmEvse.getConfig()` returns the current configuration. It is only available when the library is logged in, and  is
+not async and non-blocking, just returning whatever state is currently in memory.
+
 ```typescript
 // getConfig returns the current config. It is not async and non-blocking.
 const config = evse.getConfig();
-console.log(`Name: ${config.name}`);
 
-// However, immediately after logging in, the communicator is still working to get the
-// config, and not all fields may be set. Or, if the communicator logged in to the EVSE
-// before, there may be a stale value. If you want to be certain that you have the
-// current, live config, use fetchConfig. This method returns a promise that will
-// resolve with the config once it's available. You can call this method right after
-// login() returns (it will recycle the same promise if the config is already being
-// fetched). By default, an existing config is returned without going to the charger
-// if it was just fetched (within the last 5 seconds). This max-age (in seconds) can
-// be specified as an argument to fetchConfig.
+// Config is an EmEvseConfig instance.
+console.log(`Name: ${config.name}`);
+console.log(`Temperature unit: ${config.temperatureUnit}`);
+console.log(`Language: ${config.language}`);
+console.log(`Offline charging: ${config.offLineCharge}`);
+console.log(`Configured maximum current per phase: ${config.maxElectricity}`);
+// Note: config.maxElectricity is not actually used directly by the EVSE for charging
+// sessions; it seems to just be a way to persist the user's preference on the EVSE so
+// that various apps can share it. The actual current limit for charging is passed as a
+// parameter to chargeStart. Your app should default to this configured maxElectricity
+// when presenting the user with options to start a charging session. It should also
+// update this configuration field if the user changed the current limit when starting
+// a session, so other apps will know about it and can also use that limit.
+```
+
+Immediately after logging in, the communicator will request the config to keep itself up-to-date. Since `login()`
+will have returned already, not all fields may be immediately set. Or, if the communicator logged in to the EVSE
+before, there may be a stale value. If you want to be certain that you have the current, live config, use
+`fetchConfig`. This async method returns a promise that will resolve with the config once it's available. You
+can call this method right after `login()` returns (it will recycle the same promise if the config is already being
+fetchedat the time of the call). By default, an existing config is returned without going to the charger if it was
+just fetched (within the last 5 seconds). This max-age (in seconds) can be specified as an argument to `fetchConfig`.
+
+```typescript
 const freshConfig = await evse.fetchConfig();
 console.log(`Name: ${freshConfig.name}`);
+```
 
-// You can also just call fetchConfig without using its return value to trigger an
-// update. Any changes in config will also result in a "changed" event for the EVSE.
-// This is useful if you wish to add some "Refresh" button to your app's UI of the
-// EVSE's configuration and your UI is driven by these events. The communicator
-// currently does this right after login.
+You can also just call fetchConfig without using its return value to trigger an update. Any changes in config
+will also result in a `changed` event for the EVSE. This is useful if you wish to add some "Refresh" button to
+your app's UI of the EVSE's configuration and your UI is driven by these events.
+
+```typescript
+// Never return any in-memory, potentially stale config; always go to the charger for a fresh update.
+// May throw an error if there's some communication issue.
 evse.fetchConfig(0).then();
 ```
 
 #### Changing configuration
 
-The EVSE must be online and logged in to change these configuration settings.
-Upon successful change, the EVSE's config data structure will also be updated and a
-"changed" event will be emitted for the EVSE.
+The EVSE must be online and logged in to change these configuration settings. Upon successful change, the EVSE's
+config data structure will also be updated and a `changed` event will be emitted for the EVSE.
 
 ```typescript
 await evse.setName("My charger");
@@ -280,7 +333,11 @@ await evse.chargeStart({ chargeId: "ABC123" });
 await evse.chargeStart({ singlePhase: true });
 
 // You can delay-start a session by specifying a start time. If omitted or the time
-// is not in the future, charging will start immediately. Starting one hour from now:
+// is not in the future, charging will start immediately. Note that there is a limit
+// to how far into the future you can plan a charge session (24 hours on my Telestar);
+// chargeStart will throw an error if you set a too distant time. Also note that the
+// car must be plugged in before calling chargeStart even for planned sessions; if the
+// car isn't plugged in, chargeStart will throw an error. Starting one hour from now:
 await evse.chargeStart({
     maxAmps: 6,
     startAt: new Date(Date.now() + (3600 * 1000))
