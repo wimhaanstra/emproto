@@ -39,8 +39,6 @@ export class ChargeStart extends Datagram {
         // 44 - 45 	chargeParam3 u16    always 65535
         // 46       maxElectricity u8   in amps
 
-        // const startDate = convertTimezone(this.reservationDate || new Date(), 'Asia/Shanghai', Intl.DateTimeFormat().resolvedOptions().timeZone);
-
         const buffer = Buffer.alloc(47);
         buffer.writeUInt8(this.lineId || 1, 0);
         buffer.write(this.userId || "emmgr", 1, 16, "ascii");

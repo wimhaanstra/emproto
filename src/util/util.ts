@@ -142,7 +142,7 @@ export function enumStr<E extends {[key: number]: string | number}>(value: keyof
     }
     if (typeof value === 'string') {
         if (!Object.keys(enumType).includes(value)) {
-            console.warn(`Invalid enum key ${value}`);
+            logWarning(`Invalid enum key ${value}`);
             return undefined;
         }
         return value;
@@ -151,12 +151,12 @@ export function enumStr<E extends {[key: number]: string | number}>(value: keyof
         // Numeric enums get a reverse mapping from numeric value to string value.
         const str = enumType[value];
         if (typeof str !== 'string') {
-            console.warn(`Invalid enum value ${value}`);
+            logWarning(`Invalid enum value ${value}`);
             return undefined;
         }
         return str;
     }
-    console.warn(`Invalid enum value type ${typeof value} for type ${enumType}; expected string | number`);
+    logWarning(`Invalid enum value type ${typeof value} for type ${enumType}; expected string | number`);
     return undefined;
 }
 
@@ -175,15 +175,6 @@ export function nowStr() {
     return `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()} ${now.getHours()}:${('0' + now.getMinutes()).slice(-2)}:${('0' + now.getSeconds()).slice(-2)}`;
 }
 
-function convertTimezone(date: Date, timeZone: string, timeZone2: string): Date {
-    const time = date.getTime();
-    const dateInTimeZone = new Date(date.toLocaleString('en-US', { timeZone }));
-    const dateInTimeZone2 = new Date(date.toLocaleString('en-US', { timeZone: timeZone2 }));
-    const offset = dateInTimeZone2.getTime() - dateInTimeZone.getTime();
-    return new Date(time + offset);
-}
-
-
 const LOCAL_TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
 const EM_TIMEZONE = 'Asia/Shanghai';
 
@@ -192,7 +183,7 @@ export function dateToEmTimestamp(date: Date): number {
     const dateInLocalTimeZone = new Date(date.toLocaleString('en-US', { timeZone: LOCAL_TIMEZONE }));
     const dateInEmTimeZone = new Date(date.toLocaleString('en-US', { timeZone: EM_TIMEZONE }));
     const offset = dateInEmTimeZone.getTime() - dateInLocalTimeZone.getTime();
-    return (time + offset) / 1000;
+    return (time - offset) / 1000;
 }
 
 export function emTimestampToDate(timestamp: number): Date {
