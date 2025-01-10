@@ -9,7 +9,7 @@ const passwords = {};
 // The EVSE that we want to test. Can be a (part of) serial or name. First matching EVSE is used.
 let evseKeyword: string|undefined = undefined;
 // The command.
-let command: "stop" | "start" | undefined = undefined;
+let command: "stop" | "start" | "gettime" | "settime" | undefined = undefined;
 // The amps for the start command.
 let maxAmps: number|undefined = undefined;
 // Whether to dump datagrams.
@@ -32,12 +32,14 @@ process.argv.slice(2).forEach(arg => {
                              "                to first matching EVSE (otherwise, send to first online one).\n");
         process.stdout.write("  start=<amps>  Send a charge start command, using the maximum current in amps.\n");
         process.stdout.write("  stop          Send a charge stop command.\n");
+        process.stdout.write("  gettime       Show the current time of the EVSE.\n");
+        process.stdout.write("  settime       Sync the current app time to the EVSE.\n");
         process.stdout.write("  dump          Dump UDP packets and protocol datagrams to stdout.\n");
         process.stdout.write("\nExamples (run from project root):\n");
         process.stdout.write("  npx tsx clitest 1234567890123456=123456    Watch all EVSEs; set password for\n" + "" +
                              "                one so more detailed state can be shown.\n");
         process.stdout.write("  npx tsx clitest 1234567890123456           Watch only EVSE with given serial. If password was previously set, more detailed info can be shown.\n");
-        process.stdout.write("  npx tsx clitest MyChargerName              Watch only EVSE with given serial. If password was previously set, more detailed info can be shown.\n");
+        process.stdout.write("  npx tsx clitest MyChargerName              Watch only EVSE with given name. If password was previously set, more detailed info can be shown.\n");
         process.stdout.write("  npx tsx clitest 1234567890123456 start=6   Start charging on EVSE with given serial with 6 amps, using previously set password.\n");
         process.stdout.write("  npx tsx clitest start=6                    Start charging on first (/only) online EVSE with 6 amps, using previously set password.\n");
         process.stdout.write("  npx tsx clitest stop                       Stop charging on first (/only) online EVSE, using previously set password.\n");
@@ -55,12 +57,9 @@ process.argv.slice(2).forEach(arg => {
             passwords[parts[0]] = parts[1];
             if (!evseKeyword) evseKeyword = parts[0].toLowerCase();
         }
-    } else if (arg === "start") {
+    } else if (["start", "stop", "settime", "gettime"].includes(arg)) {
         if (command) throw new Error("Multiple commands")
-        command = "start";
-    } else if (arg === "stop") {
-        if (command) throw new Error("Multiple commands")
-        command = "stop";
+        command = arg;
     } else if (arg === "dump") {
         dumpDatagrams = true;
     } else  {
@@ -105,6 +104,14 @@ function evseMatches(evse: EmEvse) {
                 await start(evse, maxAmps);
             } else if (command === "stop") {
                 await stop(evse);
+            } else if (command === "gettime") {
+                const time = await evse.fetchSystemTime();
+                logInfo(`Time on ${evse.getInfo().serial}: ${time}`);
+                process.kill(process.pid, 'SIGINT');
+            } else if (command === "settime") {
+                await evse.setSystemTime();
+                logInfo(`Time set on ${evse.getInfo().serial}`);
+                process.kill(process.pid, 'SIGINT');
             }
         }
     });

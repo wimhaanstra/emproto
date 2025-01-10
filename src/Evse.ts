@@ -24,7 +24,7 @@ import {
     SetAndGetLanguageAction,
     SetAndGetNickNameAction,
     SetAndGetOutputElectricityAction,
-    SetAndGetTemperatureUnitAction,
+    SetAndGetTemperatureUnitAction, SystemTimeAction,
     TemperatureUnit
 } from "./util/types.js";
 import {
@@ -54,6 +54,7 @@ import {ChargeStart, ChargeStartResponse} from "./dgrams/impl/ChargeStart.js";
 import {ChargeStop, ChargeStopResponse} from "./dgrams/impl/ChargeStop.js";
 import {ChargeStartError, successReservationResults} from "./errors/ChargeStartError.js";
 import {SingleACChargingStatus} from "./dgrams/impl/SingleACChargingStatus.js";
+import {SetAndGetSystemTime, SetAndGetSystemTimeResponse} from "./dgrams/impl/SetAndGetSystemTime.js";
 
 export default class Evse implements EmEvse {
 
@@ -714,6 +715,23 @@ export default class Evse implements EmEvse {
             throw new Error(`Failed to set output electricity to ${amps}: EVSE reported back ${response.getElectricity()}`);
         }
         this.dispatchEvent("changed", response);
+    }
+
+    public async fetchSystemTime(): Promise<Date> {
+        await this.sendDatagram(new SetAndGetSystemTime().setAction(SystemTimeAction.GET));
+        const response = await this.waitForResponse(SetAndGetSystemTimeResponse.COMMAND, 5000) as SetAndGetSystemTimeResponse;
+        return response.getTime();
+    }
+
+    public async setSystemTime(time?: Date): Promise<void> {
+        const datagram = new SetAndGetSystemTime().setAction(SystemTimeAction.SET);
+        if (time) datagram.setTime(time);
+        await this.sendDatagram(datagram);
+        const response = await this.waitForResponse(SetAndGetSystemTimeResponse.COMMAND, 5000) as SetAndGetSystemTimeResponse;
+        // Require the set date and the returned date to be within 2 seconds of each other.
+        if (Math.abs(response.getTime().getTime() - datagram.getTime().getTime()) > 2000) {
+            throw new Error(`Failed to set system time to ${datagram.getTime()}: EVSE reported back ${response.getTime()}`);
+        }
     }
 
     public async chargeStart(params: ChargeStartParams = {}): Promise<ChargeStartResult> {

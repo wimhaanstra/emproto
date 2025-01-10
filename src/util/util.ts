@@ -183,7 +183,7 @@ export function dateToEmTimestamp(date: Date): number {
     const dateInLocalTimeZone = new Date(date.toLocaleString('en-US', { timeZone: LOCAL_TIMEZONE }));
     const dateInEmTimeZone = new Date(date.toLocaleString('en-US', { timeZone: EM_TIMEZONE }));
     const offset = dateInEmTimeZone.getTime() - dateInLocalTimeZone.getTime();
-    return (time - offset) / 1000;
+    return Math.floor((time - offset) / 1000);
 }
 
 export function emTimestampToDate(timestamp: number): Date {

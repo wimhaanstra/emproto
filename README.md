@@ -9,6 +9,11 @@ although there seem to be some subtle differences in supported datagrams and the
 doesn't work, please set `dumpDatagrams: true` in the createCommunicator `config` parameter in order to see what data is received;
 this may help in debugging.
 
+This library is just that: a library, meant for developers to build an app that can communicate with chargers. It implements the
+protocol used for communication between the charger and an app, and abstracts away some of the finer implementation specifics.
+But, by itself, the library doesn't do much (although there is a small [CLI test runner](#cli-test-runner) included for some basic
+testing from the command-line).
+
 This library doesn't do any bluetooth; it is assumed that you have set up a Wi-Fi connection on your charger using the OEM app, and it is
 reachable from the host where you run the library. Broadcast UDP packets from the charger should also be available to the library; if you
 have placed your charger in a separate network or VLAN, or run the library in a docker container with network separation, then ensure
@@ -70,6 +75,7 @@ Read on to see how to login and get more info from a charger, and how to control
 
 - Nodejs 20.14.10 or newer.
 - Build toolchain or runtime supporting ES6 modules.
+- Typescript to build (`tsc`), for now. Once an npm package will be created with prebuilt JS, JS will also suffice on the app side.
 
 ## Library usage
 
@@ -181,13 +187,14 @@ console.log(`Gun state: ${state.gunState}`); // See EmEvseGunState enum
 console.log(`Charging state: ${state.outputState}`); // See EmEvseOutputState enum
 
 // Meta state: what things an app can effectively do with an EVSE depends on the above three
-// protocol-level states. However most apps won't be interested in all protocol-level state detail
-// (doing many switch cases or if-else branches), and will just want to know the overall state of
-// the EVSE, e.g. to display their UI or know if they can start a charge. For this common use case,
-// the library exposes a meta state (computed from the above states) that is a single enum which
-// gives the overall state, abstracting away the protocol-level states. It is expected and
-// intended that most apps will only ever need this meta state and won't need to check the
-// separate protocol-level state fields. See EmEvseMetaState enum for possible values.
+// protocol-level states. However most apps won't be interested in all protocol-level state
+// detail (doing many switch cases or if-else branches), and will just want to know the overall
+// state of the EVSE, e.g. to display their UI or know if they can start a charge. For this
+// common use case, the library exposes a meta state (computed from the above states) that is
+// a single enum which gives the overall state, abstracting away the protocol-level states.
+// It is expected and intended that most apps will only ever need this meta state and won't
+// need to check the separate protocol-level state fields. See EmEvseMetaState enum for
+// possible values.
 console.log(`Meta state: ${evse.getMetaState()}`);
 ```
 
@@ -247,8 +254,8 @@ console.log(`Errors: ${state.errors.length === 0 ? "none!" : state.errors.join("
 
 #### Getting configuration
 
-`EmEvse.getConfig()` returns the current configuration. It is only available when the library is logged in, and  is
-not async and non-blocking, just returning whatever state is currently in memory.
+`EmEvse.getConfig()` returns the current configuration. It is only available when the library has logged in at
+least once, and is not async and non-blocking, just returning whatever state is currently in memory.
 
 ```typescript
 // getConfig returns the current config. It is not async and non-blocking.
@@ -274,7 +281,7 @@ will have returned already, not all fields may be immediately set. Or, if the co
 before, there may be a stale value. If you want to be certain that you have the current, live config, use
 `fetchConfig`. This async method returns a promise that will resolve with the config once it's available. You
 can call this method right after `login()` returns (it will recycle the same promise if the config is already being
-fetchedat the time of the call). By default, an existing config is returned without going to the charger if it was
+fetched at the time of the call). By default, an existing config is returned without going to the charger if it was
 just fetched (within the last 5 seconds). This max-age (in seconds) can be specified as an argument to `fetchConfig`.
 
 ```typescript
@@ -282,9 +289,9 @@ const freshConfig = await evse.fetchConfig();
 console.log(`Name: ${freshConfig.name}`);
 ```
 
-You can also just call fetchConfig without using its return value to trigger an update. Any changes in config
-will also result in a `changed` event for the EVSE. This is useful if you wish to add some "Refresh" button to
-your app's UI of the EVSE's configuration and your UI is driven by these events.
+You can also just initiate fetchConfig without waiting for its return value to trigger an update. Any changes
+in config will also result in a `changed` event for the EVSE. This is useful if you wish to add some "Refresh"
+button to your app's UI of the EVSE's configuration, and your UI is driven by these events.
 
 ```typescript
 // Never return any in-memory, potentially stale config; always go to the charger for a fresh update.
@@ -312,7 +319,7 @@ import { ChargeStartParams } from "emproto/types";
 // Start a charging session using 6 amps. If this value is different from the one
 // configured for the EVSE (in getConfig().maxElectricity), this new value will be
 // written to the EVSE so other apps will also have the updated amps value.
-await evse.chargeStart({ maxAmps: 6});
+await evse.chargeStart({ maxAmps: 6 });
 
 // You can omit the maxAmps parameter to use the currently configured value from
 // getConfig().maxElectricity.
@@ -369,7 +376,7 @@ const currentCharge = evse.getCurrentCharge();
 // How many kWh have been charged in this session.
 console.log(`Charged energy: ${currentCharge.chargeKWh} kWh`);
 
-// How long the session is going on, or (if finished) took.
+// How long a current session is going on, or (if finished) how long it took.
 console.log(`Duration: ${currentCharge.durationSeconds} seconds`);
 
 // When the session was entered into the EVSE. If it's not a planned session (currentState
@@ -442,8 +449,20 @@ To stop a session, use the `stop` command. You can again specify a filter to tar
 npx tsx clitest stop
 ```
 
-***IMPORTANT NOTE***
+
+# IMPORTANT NOTE
 
 The CLI runner makes it easy to quickly run start/stop commands. But each start c.q. stop will
-cause both the EVSE's AC phase relays as well as the car's high-voltage DC contactors to engage c.q. disengage.
+cause both the EVSE's AC phase relays and the car's high-voltage DC contactors to engage c.q. disengage.
 Doing this too often in quick succession **will wear these parts**!
+
+The same goes for the library's `chargeStart` and `chargeStop` methods; your app should block excessive
+starts and stops in short timespans.
+
+Note that exact behavior may differ by car; some cars leave their contactors engaged for a short while (30 seconds
+to a minute) after a session is stopped **normally** (using `chargeStop`, with the CP pin still connected -- not
+when unplugged hot). For such cars, starting a new session before the contactors have disengaged will not cause wear,
+and your app could start a new session (e.g. using a different amperage for solar charging) immediately. It will
+probably still take a minute or so for that new session to ramp up to maximum current. I do not have a list of cars
+with their actual behavior (which may vary by model year or even software version), you'd have to figure that out
+yourself. In some cases the (dis)engagement of the contactors can be audible.

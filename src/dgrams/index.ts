@@ -9,7 +9,6 @@ import { SingleACStatus, SingleACStatusResponse } from "./impl/SingleACStatus.js
 import { ChargeStart, ChargeStartResponse } from "./impl/ChargeStart.js";
 import { ChargeStop, ChargeStopResponse } from "./impl/ChargeStop.js";
 import { SetAndGetAlarmChargeStrategyResponse } from "./impl/SetAndGetAlarmChargeStrategyResponse.js";
-import { SettingSystemTime } from "./impl/SystemTime.js";
 import { SingleACChargingStatusPublicAuto, SingleACChargingStatusResponse } from "./impl/SingleACChargingStatus.js";
 import { RequestStatusRecord } from "./impl/RequestStatusRecord.js";
 import { SetAndGetChargeFeeResponse } from "./impl/SetAndGetChargeFeeResponse.js";
@@ -19,6 +18,7 @@ import { SetAndGetTemperatureUnit, SetAndGetTemperatureUnitResponse } from "./im
 import { SetAndGetOutputElectricity, SetAndGetOutputElectricityResponse } from "./impl/SetAndGetOutputElectricity.js";
 import { SetAndGetOffLineCharge, SetAndGetOffLineChargeResponse } from "./impl/SetAndGetOffLineCharge.js";
 import { SetAndGetLanguage, SetAndGetLanguageResponse } from "./impl/SetAndGetLanguage.js";
+import { SetAndGetSystemTime, SetAndGetSystemTimeResponse } from "./impl/SetAndGetSystemTime.js";
 import { GetVersion, GetVersionResponse } from "./impl/GetVersion.js";
 import { UploadLocalChargeRecord } from "./impl/UploadLocalChargeRecord.js";
 import {
@@ -59,7 +59,8 @@ const emDatagramTypes = [
     SetAndGetTemperatureUnit,
     SetAndGetTemperatureUnitResponse,
     SetAndGetServiceFeeResponse,
-    SettingSystemTime,
+    SetAndGetSystemTime,
+    SetAndGetSystemTimeResponse,
     SingleACChargingStatusPublicAuto,
     SingleACChargingStatusResponse,
     SingleACStatus,

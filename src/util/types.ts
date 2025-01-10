@@ -161,6 +161,21 @@ export interface EmEvse {
     setMaxElectricity(amps: number): Promise<void>;
 
     /**
+     * Fetch the EVSE's current system time. The EVSE needs to be online for this call to work.
+     */
+    fetchSystemTime(): Promise<Date>;
+
+    /**
+     * Set the EVSE's system time. The EVSE needs to be online for this call to work. If the time
+     * parameter is omitted, uses the application host's current time (that is the preferred way to
+     * sync the time since it sets the timestamp only just before sending the datagram onto the
+     * network).
+     * @param time Specific time to set, as a local JS Date object. If omitted, use the application
+     *             host's current time.
+     */
+    setSystemTime(time?: Date): Promise<void>;
+
+    /**
      * Start charging on given line (plug). The EVSE needs to be online for this call to work.
      *
      * @param params Parameters for starting the charging session. See ChargeStartParams for details.
@@ -578,6 +593,12 @@ export enum TemperatureUnitMapping {
     UNKNOWN = 254,
 }
 export type TemperatureUnit = keyof typeof TemperatureUnitMapping;
+
+export enum GetAndSetSystemTimeAction {
+    SET = 1,
+    GET = 2,
+    UNKNOWN = 254
+}
 
 export enum SetAndGetLanguageAction {
     UNKNOWN_0 = 0,
