@@ -1,5 +1,4 @@
 import { Buffer } from "node:buffer";
-import { EmDatagram } from "../util/types.js";
 
 /**
  * Base class for datagram implementations.
@@ -14,7 +13,7 @@ import { EmDatagram } from "../util/types.js";
  *   and normalizing the values as needed. For datagrams (commands) that are only sent from manager to EVSE, this method
  *   can be no-op/empty.
  */
-export default abstract class Datagram implements EmDatagram {
+export default abstract class Datagram {
 
     /**
      * Implementation datagram classes must define a static `COMMAND` property.
@@ -127,16 +126,16 @@ export default abstract class Datagram implements EmDatagram {
         return length - 25;
     }
 
-    public getDevicePassword(): string|undefined {
+    public getDevicePassword(): string | undefined {
         return this.devicePassword;
     }
 
-    public setDevicePassword(password: string|undefined): this {
+    public setDevicePassword(password: string | undefined): this {
         this.devicePassword = password;
         return this;
     }
 
-    public getDeviceSerial(): string|undefined {
+    public getDeviceSerial(): string | undefined {
         return this.deviceSerial;
     }
 

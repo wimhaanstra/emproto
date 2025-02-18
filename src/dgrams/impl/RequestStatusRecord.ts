@@ -1,4 +1,4 @@
-import Datagram from "../Datagram.js";
+import Datagram from "../Datagram";
 import { Buffer } from "node:buffer";
 
 export class RequestStatusRecord extends Datagram {

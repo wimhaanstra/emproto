@@ -1,35 +1,35 @@
-import Datagram from "../Datagram.js";
+import Datagram from "../Datagram";
 
 export class CurrentChargeRecord extends Datagram {
     public static readonly COMMAND = 9;
 
     public lineId: number = 1;
-    public startUserId: string|undefined = undefined;
-    public endUserId: string|undefined = undefined;
-    public chargeId: string|undefined = undefined;
-    public hasReservation: number; // u8
-    public startType: number;  // u8
-    public chargeType: number;  // u8
-    public chargeParam1: number;   // u16
-    public chargeParam2: number;   // float - Multiply by 0.001; 255.0 if value = 255
-    public chargeParam3: number;   // float - Multiply by 0.01; 255.0 if value = 255
-    public stopReason: number; // u8
-    public hasStopCharge: number; // u8
-    public reservationData: number; // u32
-    public startDate: number; // u32
-    public stopDate: number; // u32
-    public chargedTime: number; // u32
-    public chargeStartPower: number; // float - Multiply by 0.01
-    public chargeStopPower: number; // float - Multiply by 0.01
-    public chargePower: number; // float - Multiply by 0.01
-    public chargePrice: number; // float - Multiply by 0.01
-    public feeType: number; // u8
-    public chargeFee: number; // float - Multiply by 0.01
-    public logKWLength: number; // u16
-    public logKW: number[]; // u16 - optional, only included if length >= 157
-    public logChargeDataKWh: number[]; // u16 - optional, only included if length >= 253
-    public logChargeDataChargeFee: number[]; // u16 - optional, only included if length >= 253
-    public logChargeDataServiceFee: number[]; // u16 - optional, only included if length >= 253
+    public startUserId: string | undefined = undefined;
+    public endUserId: string | undefined = undefined;
+    public chargeId: string | undefined = undefined;
+    public hasReservation?: number; // u8
+    public startType?: number;  // u8
+    public chargeType?: number;  // u8
+    public chargeParam1?: number;   // u16
+    public chargeParam2?: number;   // float - Multiply by 0.001; 255.0 if value = 255
+    public chargeParam3?: number;   // float - Multiply by 0.01; 255.0 if value = 255
+    public stopReason?: number; // u8
+    public hasStopCharge?: number; // u8
+    public reservationData?: number; // u32
+    public startDate?: number; // u32
+    public stopDate?: number; // u32
+    public chargedTime?: number; // u32
+    public chargeStartPower?: number; // float - Multiply by 0.01
+    public chargeStopPower?: number; // float - Multiply by 0.01
+    public chargePower?: number; // float - Multiply by 0.01
+    public chargePrice?: number; // float - Multiply by 0.01
+    public feeType?: number; // u8
+    public chargeFee?: number; // float - Multiply by 0.01
+    public logKWLength?: number; // u16
+    public logKW?: number[]; // u16 - optional, only included if length >= 157
+    public logChargeDataKWh?: number[]; // u16 - optional, only included if length >= 253
+    public logChargeDataChargeFee?: number[]; // u16 - optional, only included if length >= 253
+    public logChargeDataServiceFee?: number[]; // u16 - optional, only included if length >= 253
 
     protected packPayload() {
         return Buffer.of();
@@ -66,7 +66,7 @@ export class CurrentChargeRecord extends Datagram {
         if (buffer.length >= 156) {
             this.logKW = [];
             for (let i = 0; i < 60; i++) {
-                this.logKW.push(buffer.readUInt16BE(96 + i*2));
+                this.logKW.push(buffer.readUInt16BE(96 + i * 2));
             }
         }
         if (buffer.length >= 252) {
@@ -109,8 +109,8 @@ export class CurrentChargeRecordResponse extends Datagram {
     public static readonly COMMAND = 32777;
 
     private lineId: number = 1;  // u8
-    private chargeId: string|undefined;  // string (16 char)
-    private status: number|undefined;  // u8
+    private chargeId: string | undefined;  // string (16 char)
+    private status: number | undefined;  // u8
 
     protected packPayload() {
         if (this.status === undefined) {
@@ -125,7 +125,7 @@ export class CurrentChargeRecordResponse extends Datagram {
         return buffer;
     }
 
-    protected unpackPayload(buffer): void {
+    protected unpackPayload(buffer: Buffer): void {
         // Not used.
     }
 

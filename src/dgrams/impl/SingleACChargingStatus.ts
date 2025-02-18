@@ -1,29 +1,29 @@
-import Datagram from "../Datagram.js";
+import Datagram from "../Datagram";
 import { Buffer } from "node:buffer";
-import { emTimestampToDate } from "../../util/util.js";
-import { EmEvseCurrentState } from "../../util/types.js";
+import { emTimestampToDate } from "../../util/util";
+import { EmEvseCurrentState } from "../../util/types";
 
 export abstract class SingleACChargingStatus extends Datagram {
 
-    public port: number;
-    public currentState: EmEvseCurrentState;    // 13=finished, 14=charging // EmEvseCurrentState
-    public chargeId: string;
-    public startType: number;
-    public chargeType: number;
-    public maxDurationMinutes: number;  // param 1
-    public maxEnergyKWh: number;        // param 2
-    public chargeParam3: number;
-    public reservationDate: Date;
-    public userId: string;
-    public maxElectricity: number;
-    public startDate: Date;
-    public durationSeconds: number;
-    public startKWhCounter: number;   // 0 if session finished.
-    public currentKWhCounter: number;   // still filled when session finished.
-    public chargeKWh: number;   // currentKWhCounter - startKWhCounter if session is active; filled with last value if session finished (startKWhCounter is set to 0 then)
-    public chargePrice: number;
-    public feeType: number;
-    public chargeFee: number;
+    public port?: number;
+    public currentState?: EmEvseCurrentState;    // 13=finished, 14=charging // EmEvseCurrentState
+    public chargeId?: string;
+    public startType?: number;
+    public chargeType?: number;
+    public maxDurationMinutes?: number;  // param 1
+    public maxEnergyKWh?: number;        // param 2
+    public chargeParam3?: number;
+    public reservationDate?: Date;
+    public userId?: string;
+    public maxElectricity?: number;
+    public startDate?: Date;
+    public durationSeconds?: number;
+    public startKWhCounter?: number;   // 0 if session finished.
+    public currentKWhCounter?: number;   // still filled when session finished.
+    public chargeKWh?: number;   // currentKWhCounter - startKWhCounter if session is active; filled with last value if session finished (startKWhCounter is set to 0 then)
+    public chargePrice?: number;
+    public feeType?: number;
+    public chargeFee?: number;
 
     protected packPayload() {
         return Buffer.of();
@@ -36,7 +36,7 @@ export abstract class SingleACChargingStatus extends Datagram {
 
         this.port = buffer.readUInt8(0);
         const currentState = buffer.length <= 74 || ![18, 19].includes(buffer.readUInt8(74)) ? buffer.readUInt8(1) : buffer.readUInt8(74);
-        this.currentState = EmEvseCurrentState[String(currentState)] || EmEvseCurrentState.UNKNOWN;
+        this.currentState = currentState as EmEvseCurrentState || EmEvseCurrentState.UNKNOWN;
         this.chargeId = this.readString(buffer, 2, 16);
         this.startType = buffer.readUInt8(18);
         this.chargeType = buffer.readUInt8(19);

@@ -1,4 +1,4 @@
-import { EmEvseError } from "./types.js";
+import { EmEvseError } from "./types";
 
 /**
  * Encode a password to a base64 string with some slight obfuscation.
@@ -6,7 +6,7 @@ import { EmEvseError } from "./types.js";
  * @param password Password to encode as an ASCII string.
  * @returns Encoded password as a base64 string.
  */
-export function encodePassword(password?: string): string|undefined {
+export function encodePassword(password?: string): string | undefined {
     if (password === undefined) return undefined;
     const inputBuf = Buffer.from(password, "ascii");
     const outputBuf = Buffer.allocUnsafe(inputBuf.length)
@@ -21,7 +21,7 @@ export function encodePassword(password?: string): string|undefined {
  * @param encodedPassword Encoded password as a base64 string.
  * @returns Decoded password as an ASCII string.
  */
-export function decodePassword(encodedPassword?: string): string|undefined {
+export function decodePassword(encodedPassword?: string): string | undefined {
     if (encodedPassword === undefined) return undefined;
     const inputBuf = Buffer.from(encodedPassword, "base64");
     const outputBuf = Buffer.allocUnsafe(inputBuf.length)
@@ -68,7 +68,7 @@ export function equals(a: any, b: any): boolean {
  * @param newValue New value of property.
  * @returns True if the property was updated, false if the new value is the same as the old value.
  */
-export function update(obj: object, prop: string, newValue: any): boolean {
+export function update(obj: any, prop: string, newValue: any): boolean {
     if (equals(obj[prop], newValue)) {
         return false;
     }
@@ -91,7 +91,7 @@ export function readString(buffer: Buffer, start: number, end: number): string {
  * If the parameter is already a Date instance, returns a new Date instance with the same time.
  * @param dt Date string/number/Date to convert.
  */
-export function toDate(dt: Date | number | string | undefined | null): Date {
+export function toDate(dt: Date | number | string | undefined | null): Date | undefined {
     if (dt instanceof Date || typeof dt === 'string') {
         return new Date(dt);
     } if (typeof dt === 'number') {
@@ -115,7 +115,7 @@ export function sleep(ms: number) {
  * @param enumType The enum type to use for conversion.
  * @returns True if the values are equal, false otherwise.
  */
-export function enumEquals<E extends {[key: number]: string | number}>(a: keyof E | number, b: keyof E | number, enumType: E): boolean {
+export function enumEquals<E extends { [key: number]: string | number }>(a: keyof E | number, b: keyof E | number, enumType: E): boolean {
     if (typeof a === typeof b) {
         return a === b;
     }
@@ -136,7 +136,7 @@ export function enumEquals<E extends {[key: number]: string | number}>(a: keyof 
  * @param enumType Enum type to use for conversion.
  * @return String representation of the enum value, or undefined if the value is not a valid key or numeric value of the enum type.
  */
-export function enumStr<E extends {[key: number]: string | number}>(value: keyof E | number | undefined, enumType: E): string | undefined {
+export function enumStr<E extends { [key: number]: string | number }>(value: keyof E | number | undefined, enumType: E): string | undefined {
     if (value === undefined) {
         return undefined;
     }
@@ -172,7 +172,7 @@ export function parseErrorState(errorState: number): EmEvseError[] {
 
 export function nowStr() {
     const now = new Date();
-    return `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()} ${now.getHours()}:${('0' + now.getMinutes()).slice(-2)}:${('0' + now.getSeconds()).slice(-2)}`;
+    return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()} ${now.getHours()}:${('0' + now.getMinutes()).slice(-2)}:${('0' + now.getSeconds()).slice(-2)}`;
 }
 
 const LOCAL_TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;

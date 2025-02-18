@@ -1,4 +1,4 @@
-import Datagram from "../Datagram.js";
+import Datagram from "../Datagram";
 
 export class UploadLocalChargeRecord extends Datagram {
 

@@ -1,4 +1,4 @@
-import Datagram from "../Datagram.js";
+import Datagram from "../Datagram";
 import { Buffer } from "node:buffer";
 
 export class SetAndGetAlarmChargeStrategyResponse extends Datagram {
@@ -9,7 +9,7 @@ export class SetAndGetAlarmChargeStrategyResponse extends Datagram {
         return Buffer.of();
     }
 
-    protected unpackPayload(buffer): void {
+    protected unpackPayload(buffer: Buffer): void {
         // console.log("270/SetAndGetAlarmChargeStrategyResponse payload: " + buffer.toString("hex"));
     }
 

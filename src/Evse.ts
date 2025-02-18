@@ -1,13 +1,12 @@
-import {clearTimeout} from "node:timers";
-import {Communicator} from "./Communicator.js";
-import Datagram from "./dgrams/Datagram.js";
+import { clearTimeout } from "node:timers";
+import { Communicator } from "./Communicator";
+import Datagram from "./dgrams/Datagram";
 import {
     ChargeStartParams,
     ChargeStartResult,
     ChargeStopParams,
     ChargeStopResult,
     type DispatchEvent,
-    EmEvse,
     type EmEvseConfig,
     EmEvseCurrentCharge,
     type EmEvseEvent,
@@ -26,7 +25,7 @@ import {
     SetAndGetOutputElectricityAction,
     SetAndGetTemperatureUnitAction, SystemTimeAction,
     TemperatureUnit
-} from "./util/types.js";
+} from "./util/types";
 import {
     decodePassword,
     encodePassword,
@@ -36,51 +35,51 @@ import {
     logWarning,
     toDate,
     update
-} from "./util/util.js";
-import {LoginAbstract, LoginConfirm, LoginResponse, RequestLogin} from "./dgrams/impl/Login.js";
-import {SingleACStatus} from "./dgrams/impl/SingleACStatus.js";
-import {SetAndGetNickName, SetAndGetNickNameResponse} from "./dgrams/impl/SetAndGetNickName.js";
-import {SetAndGetTemperatureUnit, SetAndGetTemperatureUnitResponse} from "./dgrams/impl/SetAndGetTemperatureUnit.js";
+} from "./util/util";
+import { LoginAbstract, LoginConfirm, LoginResponse, RequestLogin } from "./dgrams/impl/Login";
+import { SingleACStatus } from "./dgrams/impl/SingleACStatus";
+import { SetAndGetNickName, SetAndGetNickNameResponse } from "./dgrams/impl/SetAndGetNickName";
+import { SetAndGetTemperatureUnit, SetAndGetTemperatureUnitResponse } from "./dgrams/impl/SetAndGetTemperatureUnit";
 import {
     SetAndGetOutputElectricity,
     SetAndGetOutputElectricityResponse
-} from "./dgrams/impl/SetAndGetOutputElectricity.js";
-import {SetAndGetOffLineCharge, SetAndGetOffLineChargeResponse} from "./dgrams/impl/SetAndGetOffLineCharge.js";
-import {SetAndGetLanguage, SetAndGetLanguageResponse} from "./dgrams/impl/SetAndGetLanguage.js";
-import {GetVersion, GetVersionResponse} from "./dgrams/impl/GetVersion.js";
-import {HeadingResponse} from "./dgrams/impl/Heading.js";
-import {PasswordErrorResponse} from "./dgrams/impl/PasswordErrorResponse.js";
-import {ChargeStart, ChargeStartResponse} from "./dgrams/impl/ChargeStart.js";
-import {ChargeStop, ChargeStopResponse} from "./dgrams/impl/ChargeStop.js";
-import {ChargeStartError, successReservationResults} from "./errors/ChargeStartError.js";
-import {SingleACChargingStatus} from "./dgrams/impl/SingleACChargingStatus.js";
-import {SetAndGetSystemTime, SetAndGetSystemTimeResponse} from "./dgrams/impl/SetAndGetSystemTime.js";
+} from "./dgrams/impl/SetAndGetOutputElectricity";
+import { SetAndGetOffLineCharge, SetAndGetOffLineChargeResponse } from "./dgrams/impl/SetAndGetOffLineCharge";
+import { SetAndGetLanguage, SetAndGetLanguageResponse } from "./dgrams/impl/SetAndGetLanguage";
+import { GetVersion, GetVersionResponse } from "./dgrams/impl/GetVersion";
+import { HeadingResponse } from "./dgrams/impl/Heading";
+import { PasswordErrorResponse } from "./dgrams/impl/PasswordErrorResponse";
+import { ChargeStart, ChargeStartResponse } from "./dgrams/impl/ChargeStart";
+import { ChargeStop, ChargeStopResponse } from "./dgrams/impl/ChargeStop";
+import { ChargeStartError, successReservationResults } from "./errors/ChargeStartError";
+import { SingleACChargingStatus } from "./dgrams/impl/SingleACChargingStatus";
+import { SetAndGetSystemTime, SetAndGetSystemTimeResponse } from "./dgrams/impl/SetAndGetSystemTime";
 
-export default class Evse implements EmEvse {
+export default class Evse {
 
     private readonly communicator: Communicator;
     private readonly dispatchEvent: (event: EmEvseEvent, datagram?: Datagram) => void;
 
     private readonly info: EmEvseInfo;
     private config: EmEvseConfig;
-    private lastSeen: Date;
-    private lastActiveLogin: Date|undefined = undefined;
-    private lastConfigUpdate: Date|undefined;
+    private lastSeen?: Date;
+    private lastActiveLogin: Date | undefined = undefined;
+    private lastConfigUpdate: Date | undefined;
     private online: boolean;
-    private password: string|undefined;
-    private state: EmEvseState;
+    private password: string | undefined;
+    private state: EmEvseState | undefined;
     private currentCharge?: EmEvseCurrentCharge;
     private configUpdatePromise?: Promise<any>;
 
     constructor(communicator: Communicator,
-                dispatchEvent: DispatchEvent,
-                info: EmEvseInfo | {info: object, config?: object, lastSeen?: Date|number|string, lastConfigUpdate?: Date|number|string}) {
+        dispatchEvent: DispatchEvent,
+        info: EmEvseInfo | { info: object, config?: object, lastSeen?: Date | number | string, lastConfigUpdate?: Date | number | string }) {
         this.communicator = communicator;
         this.dispatchEvent = (event: EmEvseEvent, datagram?: Datagram) => dispatchEvent(event, this, datagram);
 
         if (isEmEvseInfo(info)) {
             // Creating new discovered EVSE.
-            this.info = { ... info };
+            this.info = { ...info };
             this.config = {};
             this.lastSeen = new Date();
             this.online = true;
@@ -89,8 +88,8 @@ export default class Evse implements EmEvse {
             if (!isEmEvseInfo(info.info)) {
                 throw new Error("Invalid EmEvseInfo in EmEvse constructor: " + JSON.stringify(info.info));
             }
-            this.info = { ... info.info };
-            this.config = info.config ? { ... info.config } : {};
+            this.info = { ...info.info };
+            this.config = info.config ? { ...info.config } : {};
             this.online = false;
             this.lastSeen = toDate(info.lastSeen);
             this.lastConfigUpdate = toDate(info.lastConfigUpdate);
@@ -109,16 +108,16 @@ export default class Evse implements EmEvse {
     public getLabel() {
         const name = this.getConfig()?.name;
         if (name) return name;
-        const brandAndModel = [ this.getInfo().brand, this.getInfo().model ].filter(Boolean).join(" ");
+        const brandAndModel = [this.getInfo().brand, this.getInfo().model].filter(Boolean).join(" ");
         if (brandAndModel !== "") return brandAndModel;
         return this.getInfo().serial;
     }
 
-    public getLastSeen(): Date {
+    public getLastSeen(): Date | undefined {
         return this.lastSeen;
     }
 
-    public getLastConfigUpdate(): Date|undefined {
+    public getLastConfigUpdate(): Date | undefined {
         return this.lastConfigUpdate;
     }
 
@@ -140,7 +139,7 @@ export default class Evse implements EmEvse {
         return this.password && this.password === password;
     }
 
-    public getState(): EmEvseState|undefined {
+    public getState(): EmEvseState | undefined {
         if (!this.isLoggedIn()) return undefined;
         return this.state;
     }
@@ -275,10 +274,13 @@ export default class Evse implements EmEvse {
             changed = true;
         }
 
-        const phases = [10, 11, 12, 13, 14, 15, 22, 23, 24, 25].includes(login.getType()) ? Phases.THREE_PHASE : Phases.SINGLE_PHASE;
-        if (this.info.phases !== phases) {
-            this.info.phases = phases;
-            changed = true;
+        const loginType = login.getType();
+        if (loginType) {
+            const phases = [10, 11, 12, 13, 14, 15, 22, 23, 24, 25].includes(loginType) ? Phases.THREE_PHASE : Phases.SINGLE_PHASE;
+            if (this.info.phases !== phases) {
+                this.info.phases = phases;
+                changed = true;
+            }
         }
 
         return changed;
@@ -287,10 +289,21 @@ export default class Evse implements EmEvse {
     private updateSingleAcStatus(datagram: SingleACStatus): boolean {
         let changed = this.state === undefined;
         if (!this.state) this.state = {} as EmEvseState;
-        const currentPower = Math.floor(Math.max(
-            datagram.currentPower,
-            (datagram.l1Voltage * datagram.l1Electricity) + (datagram.l2Voltage * datagram.l2Electricity) + (datagram.l3Voltage * datagram.l3Electricity)
-        ));
+
+        const currentPower = datagram.currentPower ?? 0;
+
+
+        if (datagram.l1Voltage && datagram.l2Voltage && datagram.l3Voltage && datagram.l1Electricity && datagram.l2Electricity && datagram.l3Electricity) { // Three phases
+            const total = (datagram.l1Voltage * datagram.l1Electricity) + (datagram.l2Voltage * datagram.l2Electricity) + (datagram.l3Voltage * datagram.l3Electricity)
+
+            if (update(this.state, "currentPower", Math.max(total, currentPower))) changed = true;
+        } else if (datagram.l1Voltage && datagram.l1Electricity) { // Single phase
+            const total = (datagram.l1Voltage * datagram.l1Electricity)
+            if (update(this.state, "currentPower", Math.max(total, currentPower))) changed = true;
+        } else { // No phases?
+            if (update(this.state, "currentPower", currentPower)) changed = true;
+        }
+
         if (update(this.state, "currentPower", currentPower)) changed = true;
         if (update(this.state, "currentAmount", datagram.totalKWhCounter)) changed = true;
         if (update(this.state, "l1Voltage", datagram.l1Voltage)) changed = true;
@@ -354,7 +367,7 @@ export default class Evse implements EmEvse {
      * @param data Plain object to deserialize.
      * @returns Deserialized EmEvse instance, or undefined if the plain object cannot be deserialized to a valid EmEvse.
      */
-    public static deserialize(communicator: Communicator, dispatchEvent: DispatchEvent, data: any): Evse|undefined {
+    public static deserialize(communicator: Communicator, dispatchEvent: DispatchEvent, data: any): Evse | undefined {
         if (typeof data === "string") {
             data = JSON.parse(data);
         }
@@ -470,13 +483,13 @@ export default class Evse implements EmEvse {
             changed = true;
         }
 
-        this.config = { ... this.config, ... other.config };
+        this.config = { ... this.config, ...other.config };
 
         return changed;
     }
 
-    public async waitForResponse(command: number|number[], timeoutMillis: number): Promise<Datagram> {
-        if (typeof command === "number") command = [ command ];
+    public async waitForResponse(command: number | number[], timeoutMillis: number): Promise<Datagram> {
+        if (typeof command === "number") command = [command];
         return new Promise((resolve, reject) => {
             let timeout: NodeJS.Timeout;
             const listener = (evse: Evse, event: EmEvseEvent, datagram?: Datagram) => {
@@ -584,7 +597,7 @@ export default class Evse implements EmEvse {
     }
 
     public toString(): string {
-        const model = [ this.info.brand, this.info.model ].filter(Boolean).join(" ");
+        const model = [this.info.brand, this.info.model].filter(Boolean).join(" ");
         return `[${this.info.serial}${model ? " " + model : ""} @ ${this.info.ip} ${EmEvseMetaState[this.getMetaState()]}]`;
     }
 
@@ -717,7 +730,7 @@ export default class Evse implements EmEvse {
         this.dispatchEvent("changed", response);
     }
 
-    public async fetchSystemTime(): Promise<Date> {
+    public async fetchSystemTime(): Promise<Date | undefined> {
         await this.sendDatagram(new SetAndGetSystemTime().setAction(SystemTimeAction.GET));
         const response = await this.waitForResponse(SetAndGetSystemTimeResponse.COMMAND, 5000) as SetAndGetSystemTimeResponse;
         return response.getTime();
@@ -726,10 +739,23 @@ export default class Evse implements EmEvse {
     public async setSystemTime(time?: Date): Promise<void> {
         const datagram = new SetAndGetSystemTime().setAction(SystemTimeAction.SET);
         if (time) datagram.setTime(time);
+
         await this.sendDatagram(datagram);
+
         const response = await this.waitForResponse(SetAndGetSystemTimeResponse.COMMAND, 5000) as SetAndGetSystemTimeResponse;
+
+        const responseTime = response.getTime();
+        if (!responseTime) {
+            throw new Error('Response does not have a time');
+        }
+
+        const datagramTime = datagram.getTime();
+        if (!datagramTime) {
+            throw new Error('Datagram time is undefined');
+        }
+
         // Require the set date and the returned date to be within 2 seconds of each other.
-        if (Math.abs(response.getTime().getTime() - datagram.getTime().getTime()) > 2000) {
+        if (Math.abs(responseTime.getTime() - datagramTime.getTime()) > 2000) {
             throw new Error(`Failed to set system time to ${datagram.getTime()}: EVSE reported back ${response.getTime()}`);
         }
     }
@@ -756,7 +782,10 @@ export default class Evse implements EmEvse {
         await this.sendDatagram(chargeStart);
         const response = await this.waitForResponse(ChargeStartResponse.COMMAND, 5000) as ChargeStartResponse;
 
-        if (response.getErrorReason() || !successReservationResults.includes(response.getReservationResult())) {
+        const result = response.getReservationResult();
+
+
+        if (response.getErrorReason() || !result || !successReservationResults.includes(result)) {
             throw new ChargeStartError(response);
         }
 
@@ -769,7 +798,7 @@ export default class Evse implements EmEvse {
         }
 
         return {
-            reservationResult: response.getReservationResult(),
+            reservationResult: result,
             startResult: response.getStartResult(),
             errorReason: response.getErrorReason(),
             maxElectricity: response.getMaxElectricity()

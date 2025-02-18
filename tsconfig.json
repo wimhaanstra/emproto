@@ -1,16 +1,20 @@
 {
   "compilerOptions": {
-    "baseUrl": "./src",
-    "moduleResolution": "NodeNext",
-    "module": "NodeNext",
-    "types": [
-      "node"
-    ],
-    "declaration": true,
-    "target": "ES2023",
-    "lib": ["ES2023"],
-    "outDir": "dist"
+    "esModuleInterop": true,
+    "module": "commonjs",
+    "sourceMap": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "target": "ES6",
+    "outDir": "./dist",
+    "skipLibCheck": true,
   },
-  "include": ["./package.json", "src/**/*"],
-  "exclude": ["node_modules"],
+  "lib": "ES2023",
+  "include": [
+    "./package.json",
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules"
+  ],
 }

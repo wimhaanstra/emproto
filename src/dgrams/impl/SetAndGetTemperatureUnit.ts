@@ -1,26 +1,30 @@
-import Datagram from "../Datagram.js";
+import Datagram from "../Datagram";
 import { Buffer } from "node:buffer";
-import { SetAndGetTemperatureUnitAction, type TemperatureUnit, TemperatureUnitMapping } from "../../util/types.js";
-import { enumStr } from "../../util/util.js";
+import { SetAndGetTemperatureUnitAction, type TemperatureUnit, TemperatureUnitMapping } from "../../util/types";
+import { enumStr } from "../../util/util";
 
 abstract class SetAndGetTemperatureUnitAbstract extends Datagram {
-    private action: SetAndGetTemperatureUnitAction;
-    private temperatureUnit: TemperatureUnitMapping;
+    private action?: SetAndGetTemperatureUnitAction;
+    private temperatureUnit?: TemperatureUnitMapping;
 
     unpackPayload(buffer: Buffer) {
-        this.action = SetAndGetTemperatureUnitAction[String(buffer.readUInt8(0))] || SetAndGetTemperatureUnitAction.UNKNOWN;
-        this.temperatureUnit = TemperatureUnitMapping[String(buffer.readUInt8(1))] || TemperatureUnitMapping.UNKNOWN;
+        this.action = buffer.readUInt8(0) as SetAndGetTemperatureUnitAction || SetAndGetTemperatureUnitAction.UNKNOWN;
+        this.temperatureUnit = buffer.readUInt8(1) as TemperatureUnitMapping || TemperatureUnitMapping.UNKNOWN;
     }
 
     packPayload(): Buffer {
-        if (![SetAndGetTemperatureUnitAction.GET, SetAndGetTemperatureUnitAction.SET].includes(this.action)) {
+        if (!this.action || ![SetAndGetTemperatureUnitAction.GET, SetAndGetTemperatureUnitAction.SET].includes(this.action)) {
             throw new Error(`Invalid SetAndGetTemperatureUnitAction: ${this.action}`);
+        }
+
+        if (!this.temperatureUnit) {
+            throw new Error(`Invalid temperatureUnit: ${this.temperatureUnit}`);
         }
 
         return Buffer.of(this.action, this.action === SetAndGetTemperatureUnitAction.GET ? 0 : this.temperatureUnit);
     }
 
-    public getAction(): SetAndGetTemperatureUnitAction {
+    public getAction(): SetAndGetTemperatureUnitAction | undefined {
         return this.action;
     }
 

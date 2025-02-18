@@ -1,10 +1,10 @@
-import Datagram from "../Datagram.js";
-import { SetAndGetNickNameAction } from "../../util/types.js";
-import { readString } from "../../util/util.js";
+import Datagram from "../Datagram";
+import { SetAndGetNickNameAction } from "../../util/types";
+import { readString } from "../../util/util";
 
 class SetAndGetNickNameAbstract extends Datagram {
     private action: SetAndGetNickNameAction = SetAndGetNickNameAction.GET;    // u8
-    private nickName: string; // 32 bytes
+    private nickName?: string; // 32 bytes
 
     public getAction(): SetAndGetNickNameAction {
         return this.action;
@@ -15,7 +15,7 @@ class SetAndGetNickNameAbstract extends Datagram {
         return this;
     }
 
-    public getNickName(): string {
+    public getNickName(): string | undefined {
         return this.nickName;
     }
 
@@ -36,7 +36,7 @@ class SetAndGetNickNameAbstract extends Datagram {
         const buffer = Buffer.alloc(33);
         buffer.writeUInt8(this.action, 0);
         if (this.action === SetAndGetNickNameAction.SET) {
-            buffer.write(this.nickName, 1, 32, "binary");
+            buffer.write(this.nickName!, 1, 32, "binary");
         }
         return buffer;
     }
@@ -46,7 +46,8 @@ class SetAndGetNickNameAbstract extends Datagram {
             throw new Error("Invalid payload; too short");
         }
 
-        this.action = SetAndGetNickNameAction[String(buffer.readUInt8(0))] || SetAndGetNickNameAction.UNKNOWN;
+        const action = buffer.readUInt8(0) as SetAndGetNickNameAction;
+        this.action = action || SetAndGetNickNameAction.UNKNOWN;
         this.nickName = readString(buffer, 1, buffer.length >= 33 ? 33 : 17);
     }
 }

@@ -1,10 +1,10 @@
-import { Communicator } from "./Communicator.js";
-import { EmCommunicator, EmCommunicatorConfig } from "./util/types.js";
+import { Communicator } from "./Communicator";
+import { EmCommunicatorConfig } from "./util/types";
 
 /**
  * Create a new communicator instance.
  * @param config Configuration (optional).
  */
-export function createCommunicator(config: Partial<EmCommunicatorConfig> = {}): EmCommunicator {
+export function createCommunicator(config: Partial<EmCommunicatorConfig> = {}): Communicator {
     return new Communicator(config);
 }

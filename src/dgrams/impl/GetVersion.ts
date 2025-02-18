@@ -1,11 +1,11 @@
-import Datagram from "../Datagram.js";
-import { readString } from "../../util/util.js";
+import Datagram from "../Datagram";
+import { readString } from "../../util/util";
 
 class GetVersionAbstract extends Datagram {
-    private hardwareVersion: string;
-    private softwareVersion: string;
-    private feature: number;
-    private supportNew: number;
+    private hardwareVersion?: string;
+    private softwareVersion?: string;
+    private feature?: number;
+    private supportNew?: number;
 
     protected unpackPayload(buffer: Buffer): void {
         if (buffer.length < 37) throw new Error('Buffer too short');
@@ -19,19 +19,19 @@ class GetVersionAbstract extends Datagram {
         return Buffer.of();
     }
 
-    public getHardwareVersion(): string {
+    public getHardwareVersion(): string | undefined {
         return this.hardwareVersion;
     }
 
-    public getSoftwareVersion(): string {
+    public getSoftwareVersion(): string | undefined {
         return this.softwareVersion;
     }
 
-    public getFeature(): number {
+    public getFeature(): number | undefined {
         return this.feature;
     }
 
-    public getSupportNew(): number {
+    public getSupportNew(): number | undefined {
         return this.supportNew;
     }
 }

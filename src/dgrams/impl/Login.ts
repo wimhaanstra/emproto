@@ -1,14 +1,14 @@
-import Datagram from "../Datagram.js";
+import Datagram from "../Datagram";
 import { Buffer } from "node:buffer";
 
 export abstract class LoginAbstract extends Datagram {
-    private type: number; // u8
-    private brand: string; // String
-    private model: string; // String
-    private hardwareVersion: string; // String
-    private maxPower: number; // u32
-    private maxElectricity: number; // u8
-    private hotLine: string; // String
+    private type?: number; // u8
+    private brand?: string; // String
+    private model?: string; // String
+    private hardwareVersion?: string; // String
+    private maxPower?: number; // u32
+    private maxElectricity?: number; // u8
+    private hotLine?: string; // String
 
     protected packPayload() {
         return Buffer.of();
@@ -33,31 +33,31 @@ export abstract class LoginAbstract extends Datagram {
         }
     }
 
-    public getType(): number {
+    public getType(): number | undefined {
         return this.type;
     }
 
-    public getBrand(): string {
+    public getBrand(): string | undefined {
         return this.brand;
     }
 
-    public getModel(): string {
+    public getModel(): string | undefined {
         return this.model;
     }
 
-    public getHardwareVersion(): string {
+    public getHardwareVersion(): string | undefined {
         return this.hardwareVersion;
     }
 
-    public getMaxPower(): number {
+    public getMaxPower(): number | undefined {
         return this.maxPower;
     }
 
-    public getMaxElectricity(): number {
+    public getMaxElectricity(): number | undefined {
         return this.maxElectricity;
     }
 
-    public getHotLine(): string {
+    public getHotLine(): string | undefined {
         return this.hotLine;
     }
 }

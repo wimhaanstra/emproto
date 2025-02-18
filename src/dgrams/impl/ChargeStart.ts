@@ -1,20 +1,20 @@
-import Datagram from "../Datagram.js";
-import { ChargeStartErrorReason, ChargeStartReservationResult } from "../../util/types.js";
-import { dateToEmTimestamp } from "../../util/util.js";
+import Datagram from "../Datagram";
+import { ChargeStartErrorReason, ChargeStartReservationResult } from "../../util/types";
+import { dateToEmTimestamp } from "../../util/util";
 
 export class ChargeStart extends Datagram {
     public static readonly COMMAND = 32775;
 
-    private lineId?: number = 1;
+    private lineId: number = 1;
     private userId?: string;
     private chargeId?: string;
-    private reservationDate: Date;
+    private reservationDate?: Date;
     private startType: number = 1;
     private chargeType: number = 1;
     private maxDurationMinutes?: number;  // param 1
     private maxEnergyKWh?: number;        // param 2
     private param3: number = 65535;
-    private maxElectricity: number;
+    private maxElectricity?: number;
 
     protected unpackPayload(buffer: Buffer): void {
         // Not used; this is an app->EVSE command.
@@ -44,7 +44,7 @@ export class ChargeStart extends Datagram {
         buffer.write(this.userId || "emmgr", 1, 16, "ascii");
         const chargeId = this.chargeId || new Date().toISOString().replace(/\D/g, "").slice(0, 12) + Math.floor(Math.random() * 10000).toString().padStart(4, "0");
         buffer.write(chargeId, 17, 16, "ascii");
-        buffer.writeUInt8(this.reservationDate?.getTime() > now ? 1 : 0, 33);
+        buffer.writeUInt8(this.reservationDate && this.reservationDate?.getTime() > now ? 1 : 0, 33);
         buffer.writeUInt32BE(dateToEmTimestamp(this.reservationDate || new Date()), 34);
         buffer.writeUInt8(this.startType, 38);
         buffer.writeUInt8(this.chargeType, 39);
@@ -118,11 +118,11 @@ export class ChargeStart extends Datagram {
 export class ChargeStartResponse extends Datagram {
     public static readonly COMMAND = 7;
 
-    private lineId: number;
-    private reservationResult: ChargeStartReservationResult;
-    private startResult: number;
-    private errorReason: ChargeStartErrorReason;
-    private maxElectricity: number;
+    private lineId?: number;
+    private reservationResult?: ChargeStartReservationResult;
+    private startResult?: number;
+    private errorReason?: ChargeStartErrorReason;
+    private maxElectricity?: number;
 
     protected unpackPayload(buffer: Buffer): void {
         if (buffer.length < 5) {
@@ -141,23 +141,23 @@ export class ChargeStartResponse extends Datagram {
         return Buffer.alloc(0);
     }
 
-    public getLineId(): number {
+    public getLineId(): number | undefined {
         return this.lineId;
     }
 
-    public getReservationResult(): ChargeStartReservationResult {
+    public getReservationResult(): ChargeStartReservationResult | undefined {
         return this.reservationResult;
     }
 
-    public getStartResult(): number {
+    public getStartResult(): number | undefined {
         return this.startResult;
     }
 
-    public getErrorReason(): ChargeStartErrorReason {
+    public getErrorReason(): ChargeStartErrorReason | undefined {
         return this.errorReason;
     }
 
-    public getMaxElectricity(): number {
+    public getMaxElectricity(): number | undefined {
         return this.maxElectricity;
     }
 

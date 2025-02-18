@@ -1,20 +1,21 @@
-import Datagram from "../Datagram.js";
-import { SystemTimeAction } from "../../util/types.js";
-import {Buffer} from "node:buffer";
-import {dateToEmTimestamp, emTimestampToDate} from "../../util/util.js";
+import Datagram from "../Datagram";
+import { SystemTimeAction } from "../../util/types";
+import { Buffer } from "node:buffer";
+import { dateToEmTimestamp, emTimestampToDate } from "../../util/util";
 
 
 abstract class SystemTimeAbstract extends Datagram {
-    private action: SystemTimeAction;
-    private time: Date;
+    private action: SystemTimeAction | undefined;
+    private time: Date | undefined;
 
     unpackPayload(buffer: Buffer) {
-        this.action = SystemTimeAction[String(buffer.readUInt8(0))] || SystemTimeAction.UNKNOWN;
+        const value = Number(String(buffer.readUInt8(0)));
+        this.action = value as SystemTimeAction || SystemTimeAction.UNKNOWN;
         this.time = emTimestampToDate(buffer.readUInt32BE(1));
     }
 
     packPayload(): Buffer {
-        if (![SystemTimeAction.GET, SystemTimeAction.SET].includes(this.action)) {
+        if (!this.action || ![SystemTimeAction.GET, SystemTimeAction.SET].includes(this.action)) {
             throw new Error(`Invalid GetAndSetSystemTimeAction: ${this.action}`);
         }
 
@@ -31,7 +32,7 @@ abstract class SystemTimeAbstract extends Datagram {
         return buffer;
     }
 
-    public getAction(): SystemTimeAction {
+    public getAction(): SystemTimeAction | undefined {
         return this.action;
     }
 
@@ -40,11 +41,11 @@ abstract class SystemTimeAbstract extends Datagram {
         return this;
     }
 
-    public getTime(): Date|undefined {
+    public getTime(): Date | undefined {
         return this.time;
     }
 
-    public setTime(time?: Date): this {
+    public setTime(time: Date): this {
         this.time = time;
         return this;
     }

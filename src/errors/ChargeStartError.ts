@@ -1,5 +1,5 @@
-import {ChargeStartResponse} from "../dgrams/impl/ChargeStart.js";
-import {ChargeStartErrorReason, ChargeStartReservationResult} from "../util/types.js";
+import { ChargeStartResponse } from "../dgrams/impl/ChargeStart";
+import { ChargeStartErrorReason, ChargeStartReservationResult } from "../util/types";
 
 export const successReservationResults = [
     ChargeStartReservationResult.IMMEDIATE_START,       // Not an error; no reservation was being made.
@@ -8,8 +8,8 @@ export const successReservationResults = [
 ];
 
 export class ChargeStartError extends Error {
-    public readonly errorReason: ChargeStartErrorReason;
-    public readonly reservationResult: ChargeStartReservationResult;
+    public readonly errorReason: ChargeStartErrorReason | undefined;
+    public readonly reservationResult: ChargeStartReservationResult | undefined;
 
     constructor(response: ChargeStartResponse) {
         let message = `Charge start failed with error: ${response.getErrorReason()}`;
@@ -17,6 +17,7 @@ export class ChargeStartError extends Error {
             message += `; reservation result: ${response.getReservationResult()}`;
         }
         super(message);
+
         this.errorReason = response.getErrorReason();
         this.reservationResult = response.getReservationResult();
     }

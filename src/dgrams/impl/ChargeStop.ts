@@ -1,4 +1,4 @@
-import Datagram from "../Datagram.js";
+import Datagram from "../Datagram";
 
 export class ChargeStop extends Datagram {
     public static readonly COMMAND = 32776;
@@ -37,7 +37,7 @@ export class ChargeStop extends Datagram {
         return this;
     }
 
-    public getUserId(): string {
+    public getUserId(): string | undefined {
         return this.userId;
     }
 
@@ -75,15 +75,15 @@ export class ChargeStopResponse extends Datagram {
         this.failReason = buffer.readUInt8(2);
     }
 
-    public getLineId(): number {
+    public getLineId(): number | undefined {
         return this.lineId;
     }
 
-    public getStopResult(): number {
+    public getStopResult(): number | undefined {
         return this.stopResult;
     }
 
-    public getFailReason(): number {
+    public getFailReason(): number | undefined {
         return this.failReason;
     }
 

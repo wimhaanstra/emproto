@@ -1,203 +1,6 @@
-export interface EmCommunicator {
-    start(): Promise<number>;
-    stop(): void;
-    isRunning(): boolean;
+import Datagram from "../dgrams/Datagram";
+import Evse from "../Evse";
 
-    loadEvses(evses: any): EmEvse[];
-    saveEvses(file: string): void;
-
-    getEvses(): EmEvse[];
-    getEvse(serial: string|null|undefined): EmEvse|undefined;
-    getEvseOrThrow(serial: string|null|undefined): EmEvse;
-    getEvseByIp(ip: string|null|undefined): EmEvse|undefined;
-
-    addEventListener(types: EmEvseEvent|EmEvseEvent[], handler: EmEvseEventHandler): this;
-    removeEventListener(types: EmEvseEvent|EmEvseEvent[], handler: EmEvseEventHandler | undefined): this;
-}
-
-export interface EmEvse {
-    /**
-     * Get information about the EVSE. EVSE does not need to be online or logged in for this.
-     */
-    getInfo(): EmEvseInfo;
-
-    /**
-     * Get currently known EVSE configuration. EVSE does not need to be online or logged in for this.
-     */
-    getConfig(): EmEvseConfig;
-
-    /**
-     * Get live configuration from the EVSE. The EVSE needs to be online and logged in for this.
-     * This method is called automatically immediately after a successful login.
-     */
-    fetchConfig(orCachedUntilSeconds?: number): Promise<EmEvseConfig>;
-
-    /**
-     * Get a label for the EVSE. If the name is known (need to be logged in to get the config with name), then
-     * that is returned. If no name is known, the brand and model are returned. If no info is known, serial is
-     * returned.
-     */
-    getLabel(): string;
-
-    /**
-     * Get the last time a datagram was received from the EVSE.
-     */
-    getLastSeen(): Date;
-
-    /**
-     * Whether the EVSE is online. This is determined by how recent getLastSeen is.
-     */
-    isOnline(): boolean;
-
-    /**
-     * Whether the EVSE has a password saved. Since a password is only saved for the EVSE upon successful login,
-     * this means the password was (at least at the time of that login) correct.
-     */
-    hasPassword(): boolean;
-
-    /**
-     * Checks a password against the saved password, without checking at the EVSE (use the login method for that).
-     * @param password Password to test against the saved password.
-     */
-    checkPassword(password: string): boolean;
-
-    /**
-     * Whether the app is logged in, i.e. has an active session on the EVSE.
-     */
-    isLoggedIn(): boolean;
-
-    /**
-     * Attempt to login using given password. The EVSE needs to be online for this.
-     * If the password is correct, it is also saved for the EVSE.
-     *
-     * @param password Password to use for logging in to the EVSE. If none is given, use the last-known password.
-     * @returns Promise which resolves when the login is successful, or rejects otherwise (e.g. password incorrect
-     *          or EVSE not responding).
-     */
-    login(password?: string): Promise<void>;
-
-    /**
-     * Get the current state (at protocol level) of the EVSE. This is only available when the EVSE is online
-     * and logged in; otherwise it will return undefined.
-     */
-    getState(): EmEvseState|undefined;
-
-    /**
-     * Get the current meta state of the EVSE. This is a computed normalized state based on various aspects
-     * of the EVSE's online and login state and its operational state fields. Offered because most apps won't
-     * need to know about the protocol-level details, but just want to show some UI.
-     */
-    getMetaState(): EmEvseMetaState;
-
-    /**
-     * Get info about the current charging session.
-     * If currently charging, this will return the current session.
-     * If a session is planned (reservation), this will return the planned session.
-     * If no session is active or planned, this will return the last finished session.
-     */
-    getCurrentCharge(): EmEvseCurrentCharge|undefined;
-
-    /**
-     * Set the EVSE's name. The EVSE needs to be online for this call to work.
-     * If the update is successful, the name is also set in EVSE's config.
-     * The current (c.q. last known) name can be accessed via getConfig().name.
-     *
-     * @param name New name to assign to the EVSE.
-     * @returns Promise which resolves when the name is successfully set, or rejects otherwise (e.g. invalid name
-     *          or EVSE not responding).
-     */
-    setName(name: string): Promise<void>;
-
-    /**
-     * Set whether the EVSE allows charging offline, i.e. without an app. This is usually done via a button or
-     * touchpad on the EVSE, and allowing offline charging normally implies that anyone with physical access can
-     * start a session, so only enable if the EVSE is on private ground.
-     * The EVSE needs to be online for this call to work. If the update is successful, the new status is also
-     * set in EVSE's config.
-     * The current (c.q. last known) status can be accessed via getConfig().offLineCharge.
-     *
-     * @param status New offline charging status.
-     * @returns Promise which resolves when the status is successfully set, or rejects otherwise (e.g. invalid status
-     *          or EVSE not responding).
-     */
-    setOffLineCharge(status: OffLineChargeStatus): Promise<void>;
-
-    /**
-     * Set the EVSE's temperature unit.
-     * The EVSE needs to be online for this call to work. If the update is successful, the new unit is also
-     * set in EVSE's config.
-     * The current (c.q. last known) temperature unit can be accessed via getConfig().temperatureUnit.
-     *
-     * @param unit New temperature unit to use for the EVSE.
-     * @returns Promise which resolves when the temperature unit is successfully set, or rejects otherwise
-     *          (e.g. invalid unit or EVSE not responding).
-     */
-    setTemperatureUnit(unit: TemperatureUnit): Promise<void>;
-
-    /**
-     * Set the EVSE's language.
-     * The EVSE needs to be online for this call to work. If the update is successful, the new language is also
-     * set in EVSE's config.
-     * The current (c.q. last known) language can be accessed via getConfig().language.
-     *
-     * @param language New language to use for the EVSE.
-     * @returns Promise which resolves when the language is successfully set, or rejects otherwise (e.g. invalid
-     *          language or EVSE not responding).
-     */
-    setLanguage(language: Language): Promise<void>;
-
-    /**
-     * Set the maximum electricity (in amps) the EVSE will deliver. The effective charging current may be
-     * lower depending on other factors, such as: the maximum supported by the car's on-board charging circuit;
-     * the car's battery state of charge; the car's charging schedule; the battery or EVSE temperature; etc.
-     * The EVSE needs to be online for this call to work. If the update is successful, the new value is also
-     * set in EVSE's config.
-     * The current (c.q. last known) maximum electricity can be accessed via getConfig().maxElectricity.
-     *
-     * @param amps Maximum current in amps.
-     * @returns Promise which resolves when the maximum electricity is successfully set, or rejects otherwise
-     *          (e.g. invalid amps value or EVSE not responding).
-     */
-    setMaxElectricity(amps: number): Promise<void>;
-
-    /**
-     * Fetch the EVSE's current system time. The EVSE needs to be online for this call to work.
-     */
-    fetchSystemTime(): Promise<Date>;
-
-    /**
-     * Set the EVSE's system time. The EVSE needs to be online for this call to work. If the time
-     * parameter is omitted, uses the application host's current time (that is the preferred way to
-     * sync the time since it sets the timestamp only just before sending the datagram onto the
-     * network).
-     * @param time Specific time to set, as a local JS Date object. If omitted, use the application
-     *             host's current time.
-     */
-    setSystemTime(time?: Date): Promise<void>;
-
-    /**
-     * Start charging on given line (plug). The EVSE needs to be online for this call to work.
-     *
-     * @param params Parameters for starting the charging session. See ChargeStartParams for details.
-     * @returns Promise which resolves when the charging session is successfully started, or rejects otherwise
-     *          (e.g. invalid amps value or EVSE not responding or invalid EVSE state, like: already charging).
-     */
-    chargeStart(params: ChargeStartParams): Promise<ChargeStartResult>;
-
-    /**
-     * Stop charging on given line (plug). The EVSE needs to be online for this call to work.
-     *
-     * @param params Parameters for stopping the charging session. See ChargeStopParams for details.
-     * @returns Promise which resolves when the charging session is successfully stopped, or rejects otherwise
-     *          (e.g. EVSE not responding or invalid EVSE state, like: no active charging session).
-     */
-    chargeStop(params?: ChargeStopParams): Promise<ChargeStopResult>;
-
-    /**
-     * Debug string representation of the EVSE.
-     */
-    toString(): string;
-}
 
 export enum Phases {
     SINGLE_PHASE = 1,
@@ -252,9 +55,9 @@ export type ChargeStartParams = {
 
 export type ChargeStartResult = {
     reservationResult: ChargeStartReservationResult;
-    startResult: number;
-    errorReason: ChargeStartErrorReason;
-    maxElectricity: number;
+    startResult?: number;
+    errorReason?: ChargeStartErrorReason;
+    maxElectricity?: number;
 };
 
 export type ChargeStopParams = {
@@ -265,8 +68,8 @@ export type ChargeStopParams = {
 };
 
 export type ChargeStopResult = {
-    stopResult: number;
-    failReason: number;
+    stopResult?: number;
+    failReason?: number;
 }
 
 export type EmCommunicatorConfig = {
@@ -299,13 +102,9 @@ export const DEFAULT_EM_COMMUNICATOR_CONFIG: EmCommunicatorConfig = {
     dumpDatagrams: false
 };
 
-export interface EmDatagram {
-    getCommand(): number;
-}
-
 export const EmEvseEvents = ["added", "changed", "removed", "datagram"] as const;
 export type EmEvseEvent = typeof EmEvseEvents[number];
-export type EmEvseEventHandler = (evse: EmEvse, event: EmEvseEvent, datagram?: EmDatagram) => void;
+export type EmEvseEventHandler = (evse: Evse, event: EmEvseEvent, datagram?: Datagram) => void;
 
 export enum EmEvseGunState {
     UNKNOWN_0 = 0,
@@ -626,7 +425,7 @@ export enum LanguageMapping {
 }
 export type Language = keyof typeof LanguageMapping;
 
-export type DispatchEvent = (event: EmEvseEvent, evse: EmEvse, datagram?: EmDatagram) => void;
+export type DispatchEvent = (event: EmEvseEvent, evse: Evse, datagram?: Datagram) => void;
 
 export enum ChargeStartErrorReason {
     NO_ERROR = 0,

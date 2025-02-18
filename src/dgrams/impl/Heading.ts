@@ -1,4 +1,4 @@
-import Datagram from "../Datagram.js";
+import Datagram from "../Datagram";
 import { Buffer } from "node:buffer";
 
 export class Heading extends Datagram {
@@ -8,7 +8,7 @@ export class Heading extends Datagram {
         return Buffer.of();
     }
 
-    protected unpackPayload(buffer): void {
+    protected unpackPayload(buffer: Buffer): void {
         // Has no payload.
     }
 }

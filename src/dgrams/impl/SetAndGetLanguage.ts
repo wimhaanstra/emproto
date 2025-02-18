@@ -1,12 +1,12 @@
-import Datagram from "../Datagram.js";
-import { type Language, LanguageMapping, SetAndGetLanguageAction } from "../../util/types.js";
-import { enumStr } from "../../util/util.js";
+import Datagram from "../Datagram";
+import { type Language, LanguageMapping, SetAndGetLanguageAction } from "../../util/types";
+import { enumStr } from "../../util/util";
 
 abstract class SetAndGetLanguageAbstract extends Datagram {
 
     private action: SetAndGetLanguageAction = SetAndGetLanguageAction.GET;
 
-    private language: LanguageMapping;
+    private language: LanguageMapping = LanguageMapping.UNKNOWN;
 
     public getAction(): SetAndGetLanguageAction {
         return this.action;
@@ -35,8 +35,8 @@ abstract class SetAndGetLanguageAbstract extends Datagram {
     }
 
     protected unpackPayload(buffer: Buffer): void {
-        this.action = SetAndGetLanguageAction[String(buffer.readUInt8(0))] || SetAndGetLanguageAction.UNKNOWN;
-        this.language = LanguageMapping[String(buffer.readUInt8(1))] || LanguageMapping.UNKNOWN;
+        this.action = buffer.readUInt8(0) as SetAndGetLanguageAction || SetAndGetLanguageAction.UNKNOWN;
+        this.language = buffer.readUInt8(1) as LanguageMapping || LanguageMapping.UNKNOWN;
     }
 
 }

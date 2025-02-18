@@ -1,24 +1,28 @@
-import Datagram from "../Datagram.js";
-import { OffLineChargeAction, type OffLineChargeStatus, OffLineChargeStatusMapping } from "../../util/types.js";
-import { enumStr } from "../../util/util.js";
+import Datagram from "../Datagram";
+import { OffLineChargeAction, type OffLineChargeStatus, OffLineChargeStatusMapping } from "../../util/types";
+import { enumStr } from "../../util/util";
 
 abstract class SetAndGetOffLineChargeAbstract extends Datagram {
-    private status: OffLineChargeStatusMapping;
-    private action: OffLineChargeAction;
+    private status?: OffLineChargeStatusMapping;
+    private action?: OffLineChargeAction;
 
     protected packPayload() {
-        return Buffer.of(this.action, this.action === OffLineChargeAction.GET ? 0 : this.status);
+        if (!this.action || (this.action === OffLineChargeAction.SET && !this.status)) {
+            throw new Error('Missing status');
+        }
+
+        return Buffer.of(this.action, this.action === OffLineChargeAction.GET ? 0 : this.status!);
     }
 
     protected unpackPayload(buffer: Buffer) {
         if (buffer.length < 2) {
             throw new Error("269/SetAndGetOffLineChargeResponse payload too small");
         }
-        this.action = OffLineChargeAction[String(buffer.readUInt8(0))] || OffLineChargeAction.UNKNOWN;
-        this.status = OffLineChargeStatusMapping[String(buffer.readUInt8(1))] || OffLineChargeStatusMapping.UNKNOWN;
+        this.action = buffer.readUInt8(0) as OffLineChargeAction || OffLineChargeAction.UNKNOWN;
+        this.status = buffer.readUInt8(1) as OffLineChargeStatusMapping || OffLineChargeStatusMapping.UNKNOWN;
     }
 
-    public getAction(): OffLineChargeAction {
+    public getAction(): OffLineChargeAction | undefined {
         return this.action;
     }
 

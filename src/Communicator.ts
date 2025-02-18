@@ -2,34 +2,33 @@ import { createSocket, Socket, RemoteInfo } from "node:dgram";
 import * as fs from "node:fs";
 import { Buffer } from "node:buffer";
 import { homedir } from "node:os";
-import { logError, logInfo, logWarning, dumpDebug } from "./util/util.js";
-import { parseDatagrams } from "./dgrams/index.js";
+import { logError, logInfo, logWarning, dumpDebug } from "./util/util";
+import { parseDatagrams } from "./dgrams/index";
 import {
-    EmCommunicator,
     DEFAULT_EM_COMMUNICATOR_CONFIG,
     EmCommunicatorConfig,
     EmEvseEvent,
     EmEvseEventHandler,
-    EmEvseEvents
-} from "./util/types.js";
-import Evse from "./Evse.js";
-import Datagram from "./dgrams/Datagram.js";
-import { Heading, HeadingResponse } from "./dgrams/impl/Heading.js";
-import { Login } from "./dgrams/impl/Login.js";
-import { SingleACStatus, SingleACStatusResponse } from "./dgrams/impl/SingleACStatus.js";
+    EmEvseEvents,
+} from "./util/types";
+import Evse from "./Evse";
+import Datagram from "./dgrams/Datagram";
+import { Heading, HeadingResponse } from "./dgrams/impl/Heading";
+import { Login } from "./dgrams/impl/Login";
+import { SingleACStatus, SingleACStatusResponse } from "./dgrams/impl/SingleACStatus";
 
 type EmEvseEventListener = {
     types: EmEvseEvent[];
     handler: EmEvseEventHandler;
 };
 
-export class Communicator implements EmCommunicator {
+export class Communicator {
 
     public readonly config: EmCommunicatorConfig;
 
-    private socket: Socket|null = null;
+    private socket: Socket | undefined;
 
-    private checkSessionTimeoutsInterval: NodeJS.Timeout|null = null;
+    private checkSessionTimeoutsInterval: NodeJS.Timeout | undefined;
 
     private readonly evses: Evse[] = [];
 
@@ -38,14 +37,14 @@ export class Communicator implements EmCommunicator {
     private supportsBroadcast = false;
 
     constructor(config: Partial<EmCommunicatorConfig> = {}) {
-        this.config = { ... DEFAULT_EM_COMMUNICATOR_CONFIG, ... config };
+        this.config = { ...DEFAULT_EM_COMMUNICATOR_CONFIG, ...config };
     }
 
     public async start(): Promise<number> {
         if (this.socket) return this.socket.address().port;
 
         return new Promise((resolve, reject) => {
-            this.socket = createSocket({type: 'udp4', reuseAddr: true});
+            this.socket = createSocket({ type: 'udp4', reuseAddr: true });
             let starting = true;
 
             if (this.checkSessionTimeoutsInterval) clearInterval(this.checkSessionTimeoutsInterval);
@@ -73,34 +72,40 @@ export class Communicator implements EmCommunicator {
                         }
 
                         const evse = this.updateEvse(datagram, rinfo);
-                        this.dispatchEvent("datagram", evse, datagram);
+                        if (evse) {
+                            this.dispatchEvent("datagram", evse, datagram);
 
-                        if (datagram instanceof Login) {
-                            // If we are not logged in now (evse's lastHeadingResponse is too long ago), and we have
-                            // a password, then we can log in.
-                            if (!evse.isLoggedIn() && evse.hasPassword()) {
-                                evse.login().then();
+                            if (datagram instanceof Login) {
+                                // If we are not logged in now (evse's lastHeadingResponse is too long ago), and we have
+                                // a password, then we can log in.
+                                if (!evse.isLoggedIn() && evse.hasPassword()) {
+                                    evse.login().then();
+                                }
+                            }
+                            if (datagram instanceof Heading) {
+                                // The Heading datagram is sent by the EVSE (explicitly to us - this is not a broadcast)
+                                // every 10 seconds when we are logged in, and seems to keep our session alive. If we didn't
+                                // get a Heading datagram for a while, we are logged out, and we should log in again by sending
+                                // a RequestLogin datagram. We always respond with a HeadingResponse datagram to keep our
+                                // session alive, and in the evse instance we keep track of the last time we sent such a
+                                // HeadingResponse. We check periodically if that is too long ago, and log in again.
+                                evse.sendDatagram(new HeadingResponse()).then();
+                            }
+                            if (datagram instanceof SingleACStatus) {
+                                evse.sendDatagram(new SingleACStatusResponse()).then();
                             }
                         }
-                        if (datagram instanceof Heading) {
-                            // The Heading datagram is sent by the EVSE (explicitly to us - this is not a broadcast)
-                            // every 10 seconds when we are logged in, and seems to keep our session alive. If we didn't
-                            // get a Heading datagram for a while, we are logged out, and we should log in again by sending
-                            // a RequestLogin datagram. We always respond with a HeadingResponse datagram to keep our
-                            // session alive, and in the evse instance we keep track of the last time we sent such a
-                            // HeadingResponse. We check periodically if that is too long ago, and log in again.
-                            evse.sendDatagram(new HeadingResponse()).then();
-                        }
-                        if (datagram instanceof SingleACStatus) {
-                            evse.sendDatagram(new SingleACStatusResponse()).then();
-                        }
                     });
-                } catch (error) {
+                } catch (error: any) {
                     logError(`${error.message}\n${error.stack}`);
                 }
             });
 
             this.socket.bind(this.config.port, () => {
+                if (!this.socket) {
+                    reject('Socket is not defined');
+                    return;
+                }
                 try {
                     this.socket.setBroadcast(true);
                     this.supportsBroadcast = true;
@@ -115,9 +120,10 @@ export class Communicator implements EmCommunicator {
                     //         console.log(`Sent RequestLogin (${bytes} bytes)`);
                     //     }
                     // });
-                } catch (error) {
+                } catch (error: any) {
                     logWarning(`UDP socket does not support broadcasting; busy EVSEs will not be auto-discovered. ${error.message}`);
                 }
+
                 const address = this.socket.address();
                 logInfo(`UDP socket listening on port ${address.port}`);
                 starting = false;
@@ -130,11 +136,11 @@ export class Communicator implements EmCommunicator {
         logInfo("Stopping...");
         if (this.checkSessionTimeoutsInterval) {
             clearInterval(this.checkSessionTimeoutsInterval);
-            this.checkSessionTimeoutsInterval = null;
+            this.checkSessionTimeoutsInterval = undefined;
         }
         if (this.socket) {
             this.socket.close();
-            this.socket = null;
+            this.socket = undefined;
         }
     }
 
@@ -147,6 +153,7 @@ export class Communicator implements EmCommunicator {
      */
     public loadEvses(evses: any): Evse[] {
         evses = this.getEvsesAsArray(evses);
+
         const loadedEvses: Evse[] = [];
         for (let maybeEvse of evses) {
             let evse = maybeEvse;
@@ -170,6 +177,7 @@ export class Communicator implements EmCommunicator {
         if (loadedEvses.length > 0) {
             this.checkSessionTimeouts();
         }
+
         return loadedEvses;
     }
 
@@ -233,7 +241,7 @@ export class Communicator implements EmCommunicator {
      * @param serial Serial of EVSE to get.
      * @return EVSE with the specified serial, or undefined if not found.
      */
-    public getEvse(serial: string|null|undefined): Evse|undefined {
+    public getEvse(serial: string | null | undefined): Evse | undefined {
         if (!serial) return undefined;
         return this.evses.find(evse => evse.getInfo().serial === serial);
     }
@@ -245,10 +253,11 @@ export class Communicator implements EmCommunicator {
      * @return Promise that resolves with the EVSE, or rejects if requested EVSE is not online within timeout.
      */
     public async waitForEvse(serial?: string, timeoutSeconds: number = 11): Promise<Evse> {
-        const known = serial && this.getEvse(serial);
-        if (known?.isOnline()) {
-            return known;
+        const evse = this.getEvse(serial);
+        if (serial && evse && evse.isOnline()) {
+            return Promise.resolve(evse);
         }
+
         return new Promise((resolve, reject) => {
             let listener: (evse: Evse, event: EmEvseEvent) => void;
             const timeout = setTimeout(() => {
@@ -267,7 +276,7 @@ export class Communicator implements EmCommunicator {
         });
     }
 
-    public getEvseOrThrow(serial: string|null|undefined): Evse {
+    public getEvseOrThrow(serial: string | null | undefined): Evse {
         const evse = this.getEvse(serial);
         if (!evse) {
             throw new Error(`EVSE with serial ${serial === null ? '(null)' : serial ?? '(undefined)'} not found`);
@@ -275,14 +284,15 @@ export class Communicator implements EmCommunicator {
         return evse;
     }
 
-    public getEvseByIp(ip: string|null|undefined): Evse|undefined {
+    public getEvseByIp(ip: string | null | undefined): Evse | undefined {
         if (!ip) return undefined;
         return this.evses.find(evse => evse.getInfo().ip === ip);
     }
 
-    private updateEvse(datagram: Datagram, rInfo: RemoteInfo): Evse {
+    private updateEvse(datagram: Datagram, rInfo: RemoteInfo): Evse | undefined {
         const serial = datagram.getDeviceSerial();
-        if (!serial) return;
+        if (!serial) return undefined;
+
         let evse = this.getEvse(serial);
         if (evse) {
             const ipUpdated = evse.updateIp(rInfo.address, rInfo.port);
@@ -327,7 +337,13 @@ export class Communicator implements EmCommunicator {
             if (this.config.dumpDatagrams) {
                 dumpDebug(`-> OUT: ${datagram.toString()} [${buffer.toString("hex")}] to ${evse.getInfo().ip}:${port}`);
             }
-            this.socket.send(buffer, 0, buffer.length, port, evse.getInfo().ip, (error: Error|null, bytes: number) => {
+
+            if (!this.socket) {
+                reject(new Error('Socket is not defined'));
+                return;
+            }
+
+            this.socket.send(buffer, 0, buffer.length, port, evse.getInfo().ip, (error: Error | null, bytes: number) => {
                 if (error) {
                     reject(error);
                 } else {
@@ -342,8 +358,8 @@ export class Communicator implements EmCommunicator {
      * @param types   The event type(s) to listen for.
      * @param handler The event handler to call when (one of) the event(s) occurs. The specific event will be passed to the handler.
      */
-    public addEventListener(types: EmEvseEvent|EmEvseEvent[], handler: EmEvseEventHandler): this {
-        if (typeof types === "string") types = [ types ];
+    public addEventListener(types: EmEvseEvent | EmEvseEvent[], handler: EmEvseEventHandler): this {
+        if (typeof types === "string") types = [types];
         if (types.length === 0) return this;
         const existing = this.listeners.find(listener => listener.handler === handler);
         if (existing) {
@@ -361,8 +377,8 @@ export class Communicator implements EmCommunicator {
      * @param handler The event handler to remove. If not specified, all event listeners for the specified types
      *                will be removed.
      */
-    public removeEventListener(types: EmEvseEvent|EmEvseEvent[], handler: EmEvseEventHandler | undefined): this {
-        if (typeof types === "string") types = [ types ];
+    public removeEventListener(types: EmEvseEvent | EmEvseEvent[], handler: EmEvseEventHandler | undefined): this {
+        if (typeof types === "string") types = [types];
         if (!types || types.length === 0) types = Object.values(EmEvseEvents);
         this.listeners = this.listeners.filter(listener => {
             if (handler && listener.handler !== handler) return true;
@@ -381,7 +397,7 @@ export class Communicator implements EmCommunicator {
         this.listeners.forEach(listener => {
             if (listener.types.includes(event)) try {
                 listener.handler(evse, event, datagram);
-            } catch (error) {
+            } catch (error: any) {
                 logError(`Error running event handler [${event} ${evse.toString()}]: ${error.message}\n${error.stack}`);
             }
         });

@@ -16,10 +16,9 @@
   "build": "tsc",
   "author": "johnwoo-nl",
   "license": "MIT",
-  "dependencies": {
-    "@types/node": "^20.17.6"
-  },
+  "dependencies": {},
   "devDependencies": {
+    "@types/node": "^20.17.6",
     "typescript": "^5.6.3"
   }
 }
