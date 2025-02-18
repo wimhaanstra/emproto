@@ -810,13 +810,13 @@ export default class Evse {
         await this.sendDatagram(chargeStop);
         const response = await this.waitForResponse(ChargeStopResponse.COMMAND, 5000) as ChargeStopResponse;
 
-        if (response.getFailReason()) {
-            throw new Error(`chargeStop failed with reason ${response.getFailReason()}`);
+        if (response.failReason) {
+            throw new Error(`chargeStop failed with reason ${response.FailReason}`);
         }
 
         return {
-            stopResult: response.getStopResult(),
-            failReason: response.getFailReason()
+            stopResult: response.stopResult,
+            failReason: response.failReason
         };
     }
 }

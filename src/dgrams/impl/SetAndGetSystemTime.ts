@@ -5,48 +5,48 @@ import { dateToEmTimestamp, emTimestampToDate } from "../../util/util";
 
 
 abstract class SystemTimeAbstract extends Datagram {
-    private action: SystemTimeAction | undefined;
-    private time: Date | undefined;
+    private _action: SystemTimeAction | undefined;
+    private _time: Date | undefined;
 
     unpackPayload(buffer: Buffer) {
         const value = Number(String(buffer.readUInt8(0)));
-        this.action = value as SystemTimeAction || SystemTimeAction.UNKNOWN;
-        this.time = emTimestampToDate(buffer.readUInt32BE(1));
+        this._action = value as SystemTimeAction || SystemTimeAction.UNKNOWN;
+        this._time = emTimestampToDate(buffer.readUInt32BE(1));
     }
 
     packPayload(): Buffer {
-        if (!this.action || ![SystemTimeAction.GET, SystemTimeAction.SET].includes(this.action)) {
-            throw new Error(`Invalid GetAndSetSystemTimeAction: ${this.action}`);
+        if (!this._action || ![SystemTimeAction.GET, SystemTimeAction.SET].includes(this._action)) {
+            throw new Error(`Invalid GetAndSetSystemTimeAction: ${this._action}`);
         }
 
         const buffer = Buffer.alloc(5);
-        buffer.writeUInt8(this.action, 0);
+        buffer.writeUInt8(this._action, 0);
 
-        if (this.action === SystemTimeAction.SET) {
-            if (!this.time || this.time.getTime() === 0) {
-                this.time = new Date();
+        if (this._action === SystemTimeAction.SET) {
+            if (!this._time || this._time.getTime() === 0) {
+                this._time = new Date();
             }
-            buffer.writeUInt32BE(dateToEmTimestamp(this.time), 1);
+            buffer.writeUInt32BE(dateToEmTimestamp(this._time), 1);
         }
 
         return buffer;
     }
 
-    public getAction(): SystemTimeAction | undefined {
-        return this.action;
+    public get action(): SystemTimeAction | undefined {
+        return this._action;
     }
 
     public setAction(action: SystemTimeAction): this {
-        this.action = action;
+        this._action = action;
         return this;
     }
 
-    public getTime(): Date | undefined {
-        return this.time;
+    public get time(): Date | undefined {
+        return this._time;
     }
 
     public setTime(time: Date): this {
-        this.time = time;
+        this._time = time;
         return this;
     }
 

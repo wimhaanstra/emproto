@@ -4,39 +4,38 @@ import { enumStr } from "../../util/util";
 
 abstract class SetAndGetLanguageAbstract extends Datagram {
 
-    private action: SetAndGetLanguageAction = SetAndGetLanguageAction.GET;
+    private _action: SetAndGetLanguageAction = SetAndGetLanguageAction.GET;
+    private _language: LanguageMapping = LanguageMapping.UNKNOWN;
 
-    private language: LanguageMapping = LanguageMapping.UNKNOWN;
-
-    public getAction(): SetAndGetLanguageAction {
-        return this.action;
+    public get action(): SetAndGetLanguageAction {
+        return this._action;
     }
 
     public setAction(action: SetAndGetLanguageAction): this {
-        this.action = action;
+        this._action = action;
         return this;
     }
 
-    public getLanguage(): Language {
-        return enumStr(this.language, LanguageMapping) as Language;
+    public get language(): Language {
+        return enumStr(this._language, LanguageMapping) as Language;
     }
 
     public setLanguage(language: Language): this {
-        this.language = LanguageMapping[language];
+        this._language = LanguageMapping[language];
         return this;
     }
 
     protected packPayload(): Buffer {
-        if (this.action === SetAndGetLanguageAction.SET && !this.language) {
+        if (this._action === SetAndGetLanguageAction.SET && !this._language) {
             throw new Error('Language is required when setting');
         }
 
-        return Buffer.of(this.action, this.language);
+        return Buffer.of(this._action, this._language);
     }
 
     protected unpackPayload(buffer: Buffer): void {
-        this.action = buffer.readUInt8(0) as SetAndGetLanguageAction || SetAndGetLanguageAction.UNKNOWN;
-        this.language = buffer.readUInt8(1) as LanguageMapping || LanguageMapping.UNKNOWN;
+        this._action = buffer.readUInt8(0) as SetAndGetLanguageAction || SetAndGetLanguageAction.UNKNOWN;
+        this._language = buffer.readUInt8(1) as LanguageMapping || LanguageMapping.UNKNOWN;
     }
 
 }

@@ -2,37 +2,37 @@ import Datagram from "../Datagram";
 import { readString } from "../../util/util";
 
 class GetVersionAbstract extends Datagram {
-    private hardwareVersion?: string;
-    private softwareVersion?: string;
-    private feature?: number;
-    private supportNew?: number;
+    private _hardwareVersion?: string;
+    private _softwareVersion?: string;
+    private _feature?: number;
+    private _supportNew?: number;
 
     protected unpackPayload(buffer: Buffer): void {
         if (buffer.length < 37) throw new Error('Buffer too short');
-        this.hardwareVersion = readString(buffer, 0, 16);
-        this.softwareVersion = readString(buffer, 16, 32);
-        this.feature = buffer.readUInt32BE(32);
-        this.supportNew = buffer.readUInt8(36);
+        this._hardwareVersion = readString(buffer, 0, 16);
+        this._softwareVersion = readString(buffer, 16, 32);
+        this._feature = buffer.readUInt32BE(32);
+        this._supportNew = buffer.readUInt8(36);
     }
 
     protected packPayload(): Buffer {
         return Buffer.of();
     }
 
-    public getHardwareVersion(): string | undefined {
-        return this.hardwareVersion;
+    public get hardwareVersion(): string | undefined {
+        return this._hardwareVersion;
     }
 
-    public getSoftwareVersion(): string | undefined {
-        return this.softwareVersion;
+    public get softwareVersion(): string | undefined {
+        return this._softwareVersion;
     }
 
-    public getFeature(): number | undefined {
-        return this.feature;
+    public get feature(): number | undefined {
+        return this._feature;
     }
 
-    public getSupportNew(): number | undefined {
-        return this.supportNew;
+    public get supportNew(): number | undefined {
+        return this._supportNew;
     }
 }
 

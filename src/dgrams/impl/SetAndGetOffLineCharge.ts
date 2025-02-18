@@ -3,40 +3,40 @@ import { OffLineChargeAction, type OffLineChargeStatus, OffLineChargeStatusMappi
 import { enumStr } from "../../util/util";
 
 abstract class SetAndGetOffLineChargeAbstract extends Datagram {
-    private status?: OffLineChargeStatusMapping;
-    private action?: OffLineChargeAction;
+    private _status?: OffLineChargeStatusMapping;
+    private _action?: OffLineChargeAction;
 
     protected packPayload() {
-        if (!this.action || (this.action === OffLineChargeAction.SET && !this.status)) {
+        if (!this._action || (this._action === OffLineChargeAction.SET && !this._status)) {
             throw new Error('Missing status');
         }
 
-        return Buffer.of(this.action, this.action === OffLineChargeAction.GET ? 0 : this.status!);
+        return Buffer.of(this._action, this._action === OffLineChargeAction.GET ? 0 : this._status!);
     }
 
     protected unpackPayload(buffer: Buffer) {
         if (buffer.length < 2) {
             throw new Error("269/SetAndGetOffLineChargeResponse payload too small");
         }
-        this.action = buffer.readUInt8(0) as OffLineChargeAction || OffLineChargeAction.UNKNOWN;
-        this.status = buffer.readUInt8(1) as OffLineChargeStatusMapping || OffLineChargeStatusMapping.UNKNOWN;
+        this._action = buffer.readUInt8(0) as OffLineChargeAction || OffLineChargeAction.UNKNOWN;
+        this._status = buffer.readUInt8(1) as OffLineChargeStatusMapping || OffLineChargeStatusMapping.UNKNOWN;
     }
 
-    public getAction(): OffLineChargeAction | undefined {
-        return this.action;
+    public get action(): OffLineChargeAction | undefined {
+        return this._action;
     }
 
     public setAction(action: OffLineChargeAction): this {
-        this.action = action;
+        this._action = action;
         return this;
     }
 
-    public getStatus(): OffLineChargeStatus {
-        return enumStr(this.status, OffLineChargeStatusMapping) as OffLineChargeStatus;
+    public get status(): OffLineChargeStatus {
+        return enumStr(this._status, OffLineChargeStatusMapping) as OffLineChargeStatus;
     }
 
     public setStatus(status: OffLineChargeStatus): this {
-        this.status = OffLineChargeStatusMapping[status];
+        this._status = OffLineChargeStatusMapping[status];
         return this;
     }
 }

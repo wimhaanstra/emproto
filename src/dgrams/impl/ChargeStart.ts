@@ -118,22 +118,22 @@ export class ChargeStart extends Datagram {
 export class ChargeStartResponse extends Datagram {
     public static readonly COMMAND = 7;
 
-    private lineId?: number;
-    private reservationResult?: ChargeStartReservationResult;
-    private startResult?: number;
-    private errorReason?: ChargeStartErrorReason;
-    private maxElectricity?: number;
+    private _lineId?: number;
+    private _reservationResult?: ChargeStartReservationResult;
+    private _startResult?: number;
+    private _errorReason?: ChargeStartErrorReason;
+    private _maxElectricity?: number;
 
     protected unpackPayload(buffer: Buffer): void {
         if (buffer.length < 5) {
             throw new Error(`Invalid ChargeStartResponse buffer length; expected 5, got ${buffer.length}`);
         }
 
-        this.lineId = buffer.readUInt8(0);
-        this.reservationResult = buffer.readUInt8(1) as ChargeStartReservationResult;
-        this.startResult = buffer.readUInt8(2);
-        this.errorReason = buffer.readUInt8(3) as ChargeStartErrorReason;
-        this.maxElectricity = buffer.readUInt8(4);
+        this._lineId = buffer.readUInt8(0);
+        this._reservationResult = buffer.readUInt8(1) as ChargeStartReservationResult;
+        this._startResult = buffer.readUInt8(2);
+        this._errorReason = buffer.readUInt8(3) as ChargeStartErrorReason;
+        this._maxElectricity = buffer.readUInt8(4);
     }
 
     protected packPayload(): Buffer {
@@ -141,24 +141,24 @@ export class ChargeStartResponse extends Datagram {
         return Buffer.alloc(0);
     }
 
-    public getLineId(): number | undefined {
-        return this.lineId;
+    public get lineId(): number | undefined {
+        return this._lineId;
     }
 
-    public getReservationResult(): ChargeStartReservationResult | undefined {
-        return this.reservationResult;
+    public get reservationResult(): ChargeStartReservationResult | undefined {
+        return this._reservationResult;
     }
 
-    public getStartResult(): number | undefined {
-        return this.startResult;
+    public get startResult(): number | undefined {
+        return this._startResult;
     }
 
-    public getErrorReason(): ChargeStartErrorReason | undefined {
-        return this.errorReason;
+    public get errorReason(): ChargeStartErrorReason | undefined {
+        return this._errorReason;
     }
 
-    public getMaxElectricity(): number | undefined {
-        return this.maxElectricity;
+    public get maxElectricity(): number | undefined {
+        return this._maxElectricity;
     }
 
 }

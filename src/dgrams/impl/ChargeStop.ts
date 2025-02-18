@@ -53,9 +53,9 @@ export class ChargeStop extends Datagram {
 export class ChargeStopResponse extends Datagram {
     public static readonly COMMAND = 8;
 
-    private lineId?: number;
-    private stopResult?: number;
-    private failReason?: number;
+    private _lineId?: number;
+    private _stopResult?: number;
+    private _failReason?: number;
 
     protected packPayload(): Buffer {
         // Not used; this is an EVSE response.
@@ -70,21 +70,21 @@ export class ChargeStopResponse extends Datagram {
         if (buffer.length < 3) {
             throw new Error(`Invalid ChargeStopResponse buffer length; expected 3, got ${buffer.length}`);
         }
-        this.lineId = buffer.readUInt8(0);
-        this.stopResult = buffer.readUInt8(1);
-        this.failReason = buffer.readUInt8(2);
+        this._lineId = buffer.readUInt8(0);
+        this._stopResult = buffer.readUInt8(1);
+        this._failReason = buffer.readUInt8(2);
     }
 
-    public getLineId(): number | undefined {
-        return this.lineId;
+    public get lineId(): number | undefined {
+        return this._lineId;
     }
 
-    public getStopResult(): number | undefined {
-        return this.stopResult;
+    public get stopResult(): number | undefined {
+        return this._stopResult;
     }
 
-    public getFailReason(): number | undefined {
-        return this.failReason;
+    public get failReason(): number | undefined {
+        return this._failReason;
     }
 
 }

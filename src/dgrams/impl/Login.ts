@@ -2,63 +2,63 @@ import Datagram from "../Datagram";
 import { Buffer } from "node:buffer";
 
 export abstract class LoginAbstract extends Datagram {
-    private type?: number; // u8
-    private brand?: string; // String
-    private model?: string; // String
-    private hardwareVersion?: string; // String
-    private maxPower?: number; // u32
-    private maxElectricity?: number; // u8
-    private hotLine?: string; // String
+    private _type?: number; // u8
+    private _brand?: string; // String
+    private _model?: string; // String
+    private _hardwareVersion?: string; // String
+    private _maxPower?: number; // u32
+    private _maxElectricity?: number; // u8
+    private _hotLine?: string; // String
 
     protected packPayload() {
         return Buffer.of();
     }
 
     protected unpackPayload(buffer: Buffer): void {
-        this.type = buffer.readUInt8(0);
-        this.brand = this.readString(buffer, 1, 16);
-        this.model = this.readString(buffer, 17, 16);
-        this.hardwareVersion = this.readString(buffer, 33, 16);
-        this.maxPower = buffer.readUInt32BE(49);
-        this.maxElectricity = buffer.readUInt8(53);
-        this.hotLine = this.readString(buffer, 54, 16);
+        this._type = buffer.readUInt8(0);
+        this._brand = this.readString(buffer, 1, 16);
+        this._model = this.readString(buffer, 17, 16);
+        this._hardwareVersion = this.readString(buffer, 33, 16);
+        this._maxPower = buffer.readUInt32BE(49);
+        this._maxElectricity = buffer.readUInt8(53);
+        this._hotLine = this.readString(buffer, 54, 16);
         if (buffer.length === 118) {
-            this.hotLine += this.readString(buffer, 70, 48);
+            this._hotLine += this.readString(buffer, 70, 48);
         } else if (buffer.length === 119 || buffer.length === 151) {
-            this.hotLine += this.readString(buffer, 71, 48);
+            this._hotLine += this.readString(buffer, 71, 48);
         }
         if (buffer.length === 151) {
-            this.brand += this.readString(buffer, 119, 16);
-            this.model += this.readString(buffer, 135, 16);
+            this._brand += this.readString(buffer, 119, 16);
+            this._model += this.readString(buffer, 135, 16);
         }
     }
 
-    public getType(): number | undefined {
-        return this.type;
+    public get type(): number | undefined {
+        return this._type;
     }
 
-    public getBrand(): string | undefined {
-        return this.brand;
+    public get brand(): string | undefined {
+        return this._brand;
     }
 
-    public getModel(): string | undefined {
-        return this.model;
+    public get model(): string | undefined {
+        return this._model;
     }
 
-    public getHardwareVersion(): string | undefined {
-        return this.hardwareVersion;
+    public get hardwareVersion(): string | undefined {
+        return this._hardwareVersion;
     }
 
-    public getMaxPower(): number | undefined {
-        return this.maxPower;
+    public get maxPower(): number | undefined {
+        return this._maxPower;
     }
 
-    public getMaxElectricity(): number | undefined {
-        return this.maxElectricity;
+    public get maxElectricity(): number | undefined {
+        return this._maxElectricity;
     }
 
-    public getHotLine(): string | undefined {
-        return this.hotLine;
+    public get hotLine(): string | undefined {
+        return this._hotLine;
     }
 }
 

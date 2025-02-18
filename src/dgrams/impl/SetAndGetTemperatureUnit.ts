@@ -4,41 +4,41 @@ import { SetAndGetTemperatureUnitAction, type TemperatureUnit, TemperatureUnitMa
 import { enumStr } from "../../util/util";
 
 abstract class SetAndGetTemperatureUnitAbstract extends Datagram {
-    private action?: SetAndGetTemperatureUnitAction;
-    private temperatureUnit?: TemperatureUnitMapping;
+    private _action?: SetAndGetTemperatureUnitAction;
+    private _temperatureUnit?: TemperatureUnitMapping;
 
     unpackPayload(buffer: Buffer) {
-        this.action = buffer.readUInt8(0) as SetAndGetTemperatureUnitAction || SetAndGetTemperatureUnitAction.UNKNOWN;
-        this.temperatureUnit = buffer.readUInt8(1) as TemperatureUnitMapping || TemperatureUnitMapping.UNKNOWN;
+        this._action = buffer.readUInt8(0) as SetAndGetTemperatureUnitAction || SetAndGetTemperatureUnitAction.UNKNOWN;
+        this._temperatureUnit = buffer.readUInt8(1) as TemperatureUnitMapping || TemperatureUnitMapping.UNKNOWN;
     }
 
     packPayload(): Buffer {
-        if (!this.action || ![SetAndGetTemperatureUnitAction.GET, SetAndGetTemperatureUnitAction.SET].includes(this.action)) {
-            throw new Error(`Invalid SetAndGetTemperatureUnitAction: ${this.action}`);
+        if (!this._action || ![SetAndGetTemperatureUnitAction.GET, SetAndGetTemperatureUnitAction.SET].includes(this._action)) {
+            throw new Error(`Invalid SetAndGetTemperatureUnitAction: ${this._action}`);
         }
 
-        if (!this.temperatureUnit) {
-            throw new Error(`Invalid temperatureUnit: ${this.temperatureUnit}`);
+        if (!this._temperatureUnit) {
+            throw new Error(`Invalid temperatureUnit: ${this._temperatureUnit}`);
         }
 
-        return Buffer.of(this.action, this.action === SetAndGetTemperatureUnitAction.GET ? 0 : this.temperatureUnit);
+        return Buffer.of(this._action, this._action === SetAndGetTemperatureUnitAction.GET ? 0 : this._temperatureUnit);
     }
 
-    public getAction(): SetAndGetTemperatureUnitAction | undefined {
-        return this.action;
+    public get action(): SetAndGetTemperatureUnitAction | undefined {
+        return this._action;
     }
 
     public setAction(action: SetAndGetTemperatureUnitAction): this {
-        this.action = action;
+        this._action = action;
         return this;
     }
 
-    public getTemperatureUnit(): TemperatureUnit {
-        return enumStr(this.temperatureUnit, TemperatureUnitMapping) as TemperatureUnit;
+    public get temperatureUnit(): TemperatureUnit {
+        return enumStr(this._temperatureUnit, TemperatureUnitMapping) as TemperatureUnit;
     }
 
     public setTemperatureUnit(temperatureUnit: TemperatureUnit): this {
-        this.temperatureUnit = TemperatureUnitMapping[temperatureUnit];
+        this._temperatureUnit = TemperatureUnitMapping[temperatureUnit];
         return this;
     }
 }
