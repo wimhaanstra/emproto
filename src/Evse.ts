@@ -237,44 +237,44 @@ export default class Evse {
 
     private updateLogin(login: LoginAbstract): boolean {
         // Guard against accidental processing of datagrams from other devices.
-        if (this.info.serial !== login.getDeviceSerial()) {
+        if (this.info.serial !== login.serial) {
             return false;
         }
 
         this.lastSeen = new Date();
         let changed = this.updateOnlineStatus();
 
-        if (this.info.brand !== login.getBrand()) {
-            this.info.brand = login.getBrand();
+        if (this.info.brand !== login.brand) {
+            this.info.brand = login.brand;
             changed = true;
         }
 
-        if (this.info.model !== login.getModel()) {
-            this.info.model = login.getModel();
+        if (this.info.model !== login.model) {
+            this.info.model = login.model;
             changed = true;
         }
 
-        if (this.info.hardwareVersion !== login.getHardwareVersion()) {
-            this.info.hardwareVersion = login.getHardwareVersion();
+        if (this.info.hardwareVersion !== login.hardwareVersion) {
+            this.info.hardwareVersion = login.hardwareVersion;
             changed = true;
         }
 
-        if (this.info.maxPower !== login.getMaxPower()) {
-            this.info.maxPower = login.getMaxPower();
+        if (this.info.maxPower !== login.maxPower) {
+            this.info.maxPower = login.maxPower;
             changed = true;
         }
 
-        if (this.info.maxElectricity !== login.getMaxElectricity()) {
-            this.info.maxElectricity = login.getMaxElectricity();
+        if (this.info.maxElectricity !== login.maxElectricity) {
+            this.info.maxElectricity = login.maxElectricity;
             changed = true;
         }
 
-        if (this.info.hotLine !== login.getHotLine()) {
-            this.info.hotLine = login.getHotLine();
+        if (this.info.hotLine !== login.hotLine) {
+            this.info.hotLine = login.hotLine;
             changed = true;
         }
 
-        const loginType = login.getType();
+        const loginType = login.type;
         if (loginType) {
             const phases = [10, 11, 12, 13, 14, 15, 22, 23, 24, 25].includes(loginType) ? Phases.THREE_PHASE : Phases.SINGLE_PHASE;
             if (this.info.phases !== phases) {
@@ -514,7 +514,7 @@ export default class Evse {
         // 1. Send the RequestLogin datagram, explicitly using the specified password. Without an
         // explicit password on the datagram, sendDatagram will fill the existing EVSE password (which
         // will also happen if no password is passed here).
-        await this.sendDatagram(new RequestLogin().setDevicePassword(password));
+        await this.sendDatagram(new RequestLogin().setPassword(password));
         // 2. Wait for the EVSE to reply with a LoginResponse (correct password)
         // or a PasswordErrorResponse (invalid password).
         const response = await this.waitForResponse([LoginResponse.COMMAND, PasswordErrorResponse.COMMAND], 3000);
@@ -527,7 +527,7 @@ export default class Evse {
             this.dispatchEvent("changed", response);
         }
         // 4. Send the LoginConfirm, completing the login flow. After this the EVSE can take commands.
-        await this.sendDatagram(new LoginConfirm().setDevicePassword(password));
+        await this.sendDatagram(new LoginConfirm().setPassword(password));
         // 5. Mark this evse as having an active session.
         this.lastActiveLogin = new Date();
         // 6. Request EVSE's configuration. We don't need to wait for this; the login is complete.
@@ -590,7 +590,7 @@ export default class Evse {
 
     public setDatagramPassword(datagram: Datagram) {
         if (this.password !== undefined) {
-            datagram.setDevicePassword(this.password);
+            datagram.setPassword(this.password);
             return true;
         }
         return false;
@@ -602,35 +602,35 @@ export default class Evse {
     }
 
     private updateOfflineCharging(datagram: SetAndGetOffLineChargeResponse) {
-        if (this.config.offLineCharge !== datagram.getStatus()) {
-            this.config.offLineCharge = datagram.getStatus();
+        if (this.config.offLineCharge !== datagram.status) {
+            this.config.offLineCharge = datagram.status;
             return true;
         }
         return false;
     }
 
     private updateNickName(datagram: SetAndGetNickNameResponse) {
-        if (!datagram.getNickName()) return false;
-        if (datagram.getNickName() !== this.config.name) {
-            this.config.name = datagram.getNickName();
+        if (!datagram.nickName) return false;
+        if (datagram.nickName !== this.config.name) {
+            this.config.name = datagram.nickName;
             return true;
         }
         return false;
     }
 
     private updateTemperatureUnit(datagram: SetAndGetTemperatureUnitResponse) {
-        if (!datagram.getTemperatureUnit()) return false;
-        if (datagram.getTemperatureUnit() !== this.config.temperatureUnit) {
-            this.config.temperatureUnit = datagram.getTemperatureUnit();
+        if (!datagram.temperatureUnit) return false;
+        if (datagram.temperatureUnit !== this.config.temperatureUnit) {
+            this.config.temperatureUnit = datagram.temperatureUnit;
             return true;
         }
         return false;
     }
 
     private updateLanguage(datagram: SetAndGetLanguageResponse): boolean {
-        if (!datagram.getLanguage()) return false;
-        if (datagram.getLanguage() !== this.config.language) {
-            this.config.language = datagram.getLanguage();
+        if (!datagram.language) return false;
+        if (datagram.language !== this.config.language) {
+            this.config.language = datagram.language;
             return true;
         }
         return false;
@@ -639,23 +639,23 @@ export default class Evse {
     private updateVersion(datagram: GetVersionResponse) {
         let changed = false;
 
-        if (datagram.getHardwareVersion() && datagram.getHardwareVersion() !== this.info.hardwareVersion) {
-            this.info.hardwareVersion = datagram.getHardwareVersion();
+        if (datagram.hardwareVersion && datagram.hardwareVersion !== this.info.hardwareVersion) {
+            this.info.hardwareVersion = datagram.hardwareVersion;
             changed = true;
         }
 
-        if (datagram.getSoftwareVersion() && datagram.getSoftwareVersion() !== this.info.softwareVersion) {
-            this.info.softwareVersion = datagram.getSoftwareVersion();
+        if (datagram.softwareVersion && datagram.softwareVersion !== this.info.softwareVersion) {
+            this.info.softwareVersion = datagram.softwareVersion;
             changed = true;
         }
 
-        if (datagram.getFeature() !== undefined && datagram.getFeature() !== this.info.feature) {
-            this.info.feature = datagram.getFeature();
+        if (datagram.feature !== undefined && datagram.feature !== this.info.feature) {
+            this.info.feature = datagram.feature;
             changed = true;
         }
 
-        if (datagram.getSupportNew() !== undefined && datagram.getSupportNew() !== this.info.supportNew) {
-            this.info.supportNew = datagram.getSupportNew();
+        if (datagram.supportNew !== undefined && datagram.supportNew !== this.info.supportNew) {
+            this.info.supportNew = datagram.supportNew;
             changed = true;
         }
 
@@ -811,7 +811,7 @@ export default class Evse {
         const response = await this.waitForResponse(ChargeStopResponse.COMMAND, 5000) as ChargeStopResponse;
 
         if (response.failReason) {
-            throw new Error(`chargeStop failed with reason ${response.FailReason}`);
+            throw new Error(`chargeStop failed with reason ${response.failReason}`);
         }
 
         return {

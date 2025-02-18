@@ -20,7 +20,7 @@ export class ChargeStart extends Datagram {
         // Not used; this is an app->EVSE command.
     }
 
-    protected packPayload(): Buffer {
+    packPayload(): Buffer {
         if (!this.maxElectricity || this.maxElectricity < 6 || this.maxElectricity > 32) {
             throw new Error("Invalid maxElectricity (amps), must be between 6 and 32");
         }
@@ -124,7 +124,7 @@ export class ChargeStartResponse extends Datagram {
     private _errorReason?: ChargeStartErrorReason;
     private _maxElectricity?: number;
 
-    protected unpackPayload(buffer: Buffer): void {
+    unpackPayload(buffer: Buffer): void {
         if (buffer.length < 5) {
             throw new Error(`Invalid ChargeStartResponse buffer length; expected 5, got ${buffer.length}`);
         }
@@ -136,7 +136,7 @@ export class ChargeStartResponse extends Datagram {
         this._maxElectricity = buffer.readUInt8(4);
     }
 
-    protected packPayload(): Buffer {
+    packPayload(): Buffer {
         // Not used; this is an EVSE response.
         return Buffer.alloc(0);
     }

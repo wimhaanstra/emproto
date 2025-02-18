@@ -25,9 +25,10 @@ export default abstract class Datagram {
     public static readonly PACKET_HEADER = 0x0601;
     public static readonly PACKET_TAIL = 0x0f02;
 
-    private keyType: number = 0x00;
-    private deviceSerial?: string;
-    private devicePassword?: string;
+    private _keyType: number = 0x00;
+
+    private _serial?: string;
+    private _password?: string;
 
     public getCommand(): number {
         for (let prototype = Object.getPrototypeOf(this); prototype !== Object.prototype && prototype !== Datagram.prototype; prototype = Object.getPrototypeOf(prototype)) {
@@ -48,13 +49,13 @@ export default abstract class Datagram {
             throw new Error(`Invalid EmDatagram: unexpected command ${command} for type ${this.constructor.name} with command ${this.getCommand()}`);
         }
 
-        this.keyType = buffer.readUInt8(4);
-        this.deviceSerial = buffer.toString("hex", 5, 13);
+        this._keyType = buffer.readUInt8(4);
+        this._serial = buffer.toString("hex", 5, 13);
         const password = buffer.subarray(13, 19);
         if (password.every((byte) => byte === 0)) {
-            this.devicePassword = undefined;
+            this._password = undefined;
         } else {
-            this.devicePassword = password.toString("ascii");
+            this._password = password.toString("ascii");
         }
 
         const payload = buffer.subarray(21, 21 + payloadLength);
@@ -82,12 +83,12 @@ export default abstract class Datagram {
         const buffer = Buffer.alloc(25 + payload.length);
         buffer.writeUInt16BE(Datagram.PACKET_HEADER, 0);
         buffer.writeUInt16BE(buffer.length, 2);
-        buffer.writeUInt8(this.keyType, 4);
-        if (this.deviceSerial) {
-            buffer.write(this.deviceSerial, 5, 8, "hex");
+        buffer.writeUInt8(this._keyType, 4);
+        if (this._serial) {
+            buffer.write(this._serial, 5, 8, "hex");
         }
-        if (this.devicePassword !== undefined) {
-            buffer.write(this.devicePassword, 13, 6, "ascii");
+        if (this._password !== undefined) {
+            buffer.write(this._password, 13, 6, "ascii");
         }
         buffer.writeUInt16BE(command, 19);
         payload.copy(buffer, 21, 0, payload.length);
@@ -126,35 +127,35 @@ export default abstract class Datagram {
         return length - 25;
     }
 
-    public getDevicePassword(): string | undefined {
-        return this.devicePassword;
+    public get password(): string | undefined {
+        return this._password;
     }
 
-    public setDevicePassword(password: string | undefined): this {
-        this.devicePassword = password;
+    public setPassword(password: string | undefined): this {
+        this._password = password;
         return this;
     }
 
-    public getDeviceSerial(): string | undefined {
-        return this.deviceSerial;
+    public get serial(): string | undefined {
+        return this._serial;
     }
 
-    public setDeviceSerial(serial: string): this {
-        this.deviceSerial = serial;
+    public setSerial(serial: string): this {
+        this._serial = serial;
         return this;
     }
 
-    public getKeyType(): number {
-        return this.keyType;
+    public get keyType(): number {
+        return this._keyType;
     }
 
     public setKeyType(keyType: number): this {
-        this.keyType = keyType;
+        this._keyType = keyType;
         return this;
     }
 
     public toString(): string {
-        let str = `${this.constructor.name}/${this.getCommand()} serial=${this.deviceSerial}`;
+        let str = `${this.constructor.name}/${this.getCommand()} serial=${this._serial}`;
         Object.entries(this).forEach(([key, value]) => {
             if (key === "deviceSerial" || key === "devicePassword" || key === "keyType" || value === undefined) return;
             if (typeof value === "function") return;

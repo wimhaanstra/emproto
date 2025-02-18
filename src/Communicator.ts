@@ -290,7 +290,7 @@ export class Communicator {
     }
 
     private updateEvse(datagram: Datagram, rInfo: RemoteInfo): Evse | undefined {
-        const serial = datagram.getDeviceSerial();
+        const serial = datagram.get serial();
         if (!serial) return undefined;
 
         let evse = this.getEvse(serial);
@@ -321,12 +321,12 @@ export class Communicator {
         }
 
         // If device serial is not set on the datagram, but we have one for the EVSE, then set it before sending.
-        if (evse.getInfo().serial && !datagram.getDeviceSerial()) {
-            datagram.setDeviceSerial(evse.getInfo().serial);
+        if (evse.getInfo().serial && !datagram.get serial()) {
+            datagram.setSerial(evse.getInfo().serial);
         }
 
         // If device password is not yet set on datagram by caller, then have it filled from EVSE before sending.
-        if (datagram.getDevicePassword() === undefined) {
+        if (datagram.get password() === undefined) {
             evse.setDatagramPassword(datagram);
         }
 
