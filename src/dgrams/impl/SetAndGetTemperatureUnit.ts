@@ -17,11 +17,11 @@ abstract class SetAndGetTemperatureUnitAbstract extends Datagram {
             throw new Error(`Invalid SetAndGetTemperatureUnitAction: ${this._action}`);
         }
 
-        if (!this._temperatureUnit) {
+        if (!this._temperatureUnit && this._action === SetAndGetTemperatureUnitAction.SET) {
             throw new Error(`Invalid temperatureUnit: ${this._temperatureUnit}`);
         }
 
-        return Buffer.of(this._action, this._action === SetAndGetTemperatureUnitAction.GET ? 0 : this._temperatureUnit);
+        return Buffer.of(this._action, this._action === SetAndGetTemperatureUnitAction.SET ? this._temperatureUnit! : 0);
     }
 
     public get action(): SetAndGetTemperatureUnitAction | undefined {

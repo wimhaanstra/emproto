@@ -195,21 +195,26 @@ export function emTimestampToDate(timestamp: number): Date {
 }
 
 export function logInfo(msg: string) {
-    process.stdout.write(`[${nowStr()}] ℹ️ ${msg}\n`);
+    //process.stdout.write(`[${nowStr()}] ℹ️ ${msg}\n`);
+    console.log(msg);
 }
 
 export function logWarning(msg: string) {
-    process.stdout.write(`[${nowStr()}] ⚠️ ${msg}\n`);
+    // process.stdout.write(`[${nowStr()}] ⚠️ ${msg}\n`);
+    console.log(msg);
 }
 
 export function logError(msg: string) {
-    process.stderr.write(`[${nowStr()}] ⚠️ ${msg}\n`);
+    // process.stderr.write(`[${nowStr()}] ⚠️ ${msg}\n`);
+    console.log(msg);
 }
 
 export function logSuccess(msg: string) {
-    process.stdout.write(`[${nowStr()}] 🆗 ${msg}\n`);
+    // process.stdout.write(`[${nowStr()}] 🆗 ${msg}\n`);
+    console.log(msg);
 }
 
 export function dumpDebug(msg: string) {
-    process.stdout.write(`[${nowStr()}] 🐞 ${msg}\n`);
+    console.log(msg);
+    // process.stdout.write(`[${nowStr()}] 🐞 ${msg}\n`);
 }

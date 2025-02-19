@@ -50,7 +50,9 @@ export default abstract class Datagram {
         }
 
         this._keyType = buffer.readUInt8(4);
-        this._serial = buffer.toString("hex", 5, 13);
+
+        this._serial = buffer.toString('hex', 5, 13);
+
         const password = buffer.subarray(13, 19);
         if (password.every((byte) => byte === 0)) {
             this._password = undefined;

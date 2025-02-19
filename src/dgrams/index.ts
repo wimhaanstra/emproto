@@ -92,8 +92,10 @@ export function parseDatagrams(buffer: Buffer): Datagram[] {
             console.warn(`Invalid EmDatagram: unknown command ${command}`);
             break;
         }
+
         // @ts-ignore
-        const datagram = new emDatagramType();
+        const datagram: Datagram = new emDatagramType();
+
         const datagramLength = datagram.unpack(buffer);
         datagrams.push(datagram);
         buffer = buffer.subarray(datagramLength);
