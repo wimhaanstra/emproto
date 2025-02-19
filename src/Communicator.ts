@@ -163,7 +163,7 @@ export class Communicator {
             evse = Evse.deserialize(this, this.dispatchEvent.bind(this), evse);
             if (!evse) continue;
             loadedEvses.push(evse);
-            const existing = this.getEvse(evse.getInfo().serial);
+            const existing = this.getEvse(evse.info.serial);
             if (existing) {
                 if (existing.merge(evse)) {
                     this.dispatchEvent("changed", evse);
@@ -243,7 +243,7 @@ export class Communicator {
      */
     public getEvse(serial: string | null | undefined): Evse | undefined {
         if (!serial) return undefined;
-        return this.evses.find(evse => evse.getInfo().serial === serial);
+        return this.evses.find(evse => evse.info.serial === serial);
     }
 
     /**
@@ -265,7 +265,7 @@ export class Communicator {
                 reject(new Error(`EVSE with serial ${serial ?? '(any)'} not online within ${timeoutSeconds} seconds`));
             }, timeoutSeconds * 1000);
             listener = (evse: Evse, event: EmEvseEvent) => {
-                if (serial && evse.getInfo().serial !== serial) return;
+                if (serial && evse.info.serial !== serial) return;
                 if (evse.isOnline()) {
                     clearTimeout(timeout);
                     this.removeEventListener("datagram", listener);
@@ -286,12 +286,13 @@ export class Communicator {
 
     public getEvseByIp(ip: string | null | undefined): Evse | undefined {
         if (!ip) return undefined;
-        return this.evses.find(evse => evse.getInfo().ip === ip);
+        return this.evses.find(evse => evse.info.ip === ip);
     }
 
     private updateEvse(datagram: Datagram, rInfo: RemoteInfo): Evse | undefined {
-        const serial = datagram.get serial();
-        if (!serial) return undefined;
+        if (!datagram.serial) return undefined;
+
+        const serial = datagram.serial;
 
         let evse = this.getEvse(serial);
         if (evse) {
@@ -320,22 +321,24 @@ export class Communicator {
             throw new Error("EmCommunicator is not running");
         }
 
+        const serial = datagram.serial;
+
         // If device serial is not set on the datagram, but we have one for the EVSE, then set it before sending.
-        if (evse.getInfo().serial && !datagram.get serial()) {
-            datagram.setSerial(evse.getInfo().serial);
+        if (evse.info.serial && !serial) {
+            datagram.setSerial(evse.info.serial);
         }
 
         // If device password is not yet set on datagram by caller, then have it filled from EVSE before sending.
-        if (datagram.get password() === undefined) {
+        if (datagram.password === undefined) {
             evse.setDatagramPassword(datagram);
         }
 
         const buffer = datagram.pack();
-        const port = evse.getInfo().port;
+        const port = evse.info.port;
 
         return new Promise((resolve, reject) => {
             if (this.config.dumpDatagrams) {
-                dumpDebug(`-> OUT: ${datagram.toString()} [${buffer.toString("hex")}] to ${evse.getInfo().ip}:${port}`);
+                dumpDebug(`-> OUT: ${datagram.toString()} [${buffer.toString("hex")}] to ${evse.info.ip}:${port}`);
             }
 
             if (!this.socket) {
@@ -343,7 +346,7 @@ export class Communicator {
                 return;
             }
 
-            this.socket.send(buffer, 0, buffer.length, port, evse.getInfo().ip, (error: Error | null, bytes: number) => {
+            this.socket.send(buffer, 0, buffer.length, port, evse.info.ip, (error: Error | null, bytes: number) => {
                 if (error) {
                     reject(error);
                 } else {

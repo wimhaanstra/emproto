@@ -3,8 +3,8 @@ import Datagram from "../Datagram";
 export class ChargeStop extends Datagram {
     public static readonly COMMAND = 32776;
 
-    private lineId: number = 1;
-    private userId?: string;
+    private _lineId: number = 1;
+    private _userId?: string;
 
     protected packPayload(): Buffer {
         // Length: 47 bytes
@@ -13,8 +13,8 @@ export class ChargeStop extends Datagram {
         // 01 - 16  userId      String
         // 17 - 46  zeroed
         const buffer = Buffer.alloc(47);
-        buffer.writeUInt8(this.lineId, 0);
-        buffer.write(this.userId || "emmgr", 1, 16, "ascii");
+        buffer.writeUInt8(this._lineId, 0);
+        buffer.write(this._userId || "emmgr", 1, 16, "ascii");
         return buffer;
     }
 
@@ -22,8 +22,8 @@ export class ChargeStop extends Datagram {
         // Not used; this is an app->EVSE command.
     }
 
-    public getLineId(): number {
-        return this.lineId;
+    public get lineId(): number {
+        return this._lineId;
     }
 
     public setLineId(lineId?: number): this {
@@ -33,17 +33,17 @@ export class ChargeStop extends Datagram {
         if (lineId < 1) {
             throw new Error(`Invalid lineId: ${lineId}`);
         }
-        this.lineId = lineId;
+        this._lineId = lineId;
         return this;
     }
 
-    public getUserId(): string | undefined {
-        return this.userId;
+    public get userId(): string | undefined {
+        return this._userId;
     }
 
     public setUserId(userId?: string): this {
         if (userId) {
-            this.userId = userId;
+            this._userId = userId;
         }
         return this;
     }

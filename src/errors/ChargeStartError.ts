@@ -12,13 +12,13 @@ export class ChargeStartError extends Error {
     public readonly reservationResult: ChargeStartReservationResult | undefined;
 
     constructor(response: ChargeStartResponse) {
-        let message = `Charge start failed with error: ${response.getErrorReason()}`;
-        if (response.getReservationResult() !== ChargeStartReservationResult.IMMEDIATE_START) {
-            message += `; reservation result: ${response.getReservationResult()}`;
+        let message = `Charge start failed with error: ${response.errorReason}`;
+        if (response.reservationResult !== ChargeStartReservationResult.IMMEDIATE_START) {
+            message += `; reservation result: ${response.reservationResult}`;
         }
         super(message);
 
-        this.errorReason = response.getErrorReason();
-        this.reservationResult = response.getReservationResult();
+        this.errorReason = response.errorReason;
+        this.reservationResult = response.reservationResult;
     }
 }

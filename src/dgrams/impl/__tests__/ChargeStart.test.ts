@@ -16,9 +16,11 @@ describe("ChargeStart", () => {
 
         const buffer = chargeStart.packPayload();
 
+        const userId = buffer.subarray(1, buffer.indexOf(0x00, 1)).toString();
+
         expect(buffer.length).toBe(47);
         expect(buffer.readUInt8(0)).toBe(1);
-        //expect(buffer.toString("ascii", 1, 17).trim()).toBe("testuser");
+        expect(userId).toBe("testuser");
         expect(buffer.toString("ascii", 17, 33)).toBe("2025010112000000");
         expect(buffer.readUInt8(33)).toBe(0);
         expect(buffer.readUInt32BE(34)).toBe(dateToEmTimestamp(new Date("2025-02-18T12:00:00Z")));

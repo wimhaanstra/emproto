@@ -60,16 +60,16 @@ export default class Evse {
     private readonly communicator: Communicator;
     private readonly dispatchEvent: (event: EmEvseEvent, datagram?: Datagram) => void;
 
-    private readonly info: EmEvseInfo;
-    private config: EmEvseConfig;
-    private lastSeen?: Date;
-    private lastActiveLogin: Date | undefined = undefined;
-    private lastConfigUpdate: Date | undefined;
-    private online: boolean;
-    private password: string | undefined;
-    private state: EmEvseState | undefined;
-    private currentCharge?: EmEvseCurrentCharge;
-    private configUpdatePromise?: Promise<any>;
+    private readonly _info: EmEvseInfo;
+    private _config: EmEvseConfig;
+    private _lastSeen?: Date;
+    private _lastActiveLogin: Date | undefined = undefined;
+    private _lastConfigUpdate: Date | undefined;
+    private _online: boolean;
+    private _password: string | undefined;
+    private _state: EmEvseState | undefined;
+    private _currentCharge?: EmEvseCurrentCharge;
+    private _configUpdatePromise?: Promise<any>;
 
     constructor(communicator: Communicator,
         dispatchEvent: DispatchEvent,
@@ -79,88 +79,88 @@ export default class Evse {
 
         if (isEmEvseInfo(info)) {
             // Creating new discovered EVSE.
-            this.info = { ...info };
-            this.config = {};
-            this.lastSeen = new Date();
-            this.online = true;
+            this._info = { ...info };
+            this._config = {};
+            this._lastSeen = new Date();
+            this._online = true;
         } else {
             // Loading EVSE from persistent storage.
             if (!isEmEvseInfo(info.info)) {
                 throw new Error("Invalid EmEvseInfo in EmEvse constructor: " + JSON.stringify(info.info));
             }
-            this.info = { ...info.info };
-            this.config = info.config ? { ...info.config } : {};
-            this.online = false;
-            this.lastSeen = toDate(info.lastSeen);
-            this.lastConfigUpdate = toDate(info.lastConfigUpdate);
+            this._info = { ...info.info };
+            this._config = info.config ? { ...info.config } : {};
+            this._online = false;
+            this._lastSeen = toDate(info.lastSeen);
+            this._lastConfigUpdate = toDate(info.lastConfigUpdate);
             this.updateOnlineStatus();
         }
     }
 
-    public getInfo(): EmEvseInfo {
-        return this.info;
+    public get info(): EmEvseInfo {
+        return this._info;
     }
 
-    public getConfig(): EmEvseConfig {
-        return this.config;
+    public get config(): EmEvseConfig {
+        return this._config;
     }
 
-    public getLabel() {
-        const name = this.getConfig()?.name;
+    public get label() {
+        const name = this.config?.name;
         if (name) return name;
-        const brandAndModel = [this.getInfo().brand, this.getInfo().model].filter(Boolean).join(" ");
+        const brandAndModel = [this.info.brand, this.info.model].filter(Boolean).join(" ");
         if (brandAndModel !== "") return brandAndModel;
-        return this.getInfo().serial;
+        return this.info.serial;
     }
 
-    public getLastSeen(): Date | undefined {
-        return this.lastSeen;
+    public get lastSeen(): Date | undefined {
+        return this._lastSeen;
     }
 
-    public getLastConfigUpdate(): Date | undefined {
-        return this.lastConfigUpdate;
+    public get lastConfigUpdate(): Date | undefined {
+        return this._lastConfigUpdate;
     }
 
     public isOnline(): boolean {
-        return this.online;
+        return this._online;
     }
 
     public isLoggedIn(): boolean {
         return this.isOnline()
-            && this.lastActiveLogin !== undefined
-            && this.lastActiveLogin.getTime() > (Date.now() - (1000 * 15));
+            && this._lastActiveLogin !== undefined
+            && this._lastActiveLogin.getTime() > (Date.now() - (1000 * 15));
     }
 
     public hasPassword(): boolean {
-        return this.password !== undefined;
+        return this._password !== undefined;
     }
 
     public checkPassword(password: string) {
-        return this.password && this.password === password;
+        return this._password && this._password === password;
     }
 
-    public getState(): EmEvseState | undefined {
+    public get state(): EmEvseState | undefined {
         if (!this.isLoggedIn()) return undefined;
-        return this.state;
+        return this._state;
     }
 
-    public getMetaState(): EmEvseMetaState {
+    public get metaState(): EmEvseMetaState {
         if (!this.isOnline()) return EmEvseMetaState.OFFLINE;
         if (!this.isLoggedIn()) return EmEvseMetaState.NOT_LOGGED_IN;
-        if (!this.state) return EmEvseMetaState.IDLE;
-        if (this.state.errors?.length > 0) return EmEvseMetaState.ERROR;
-        if (enumEquals(this.state.outputState, EmEvseOutputState.CHARGING, EmEvseOutputState)) return EmEvseMetaState.CHARGING;
-        if (!enumEquals(this.state.gunState, EmEvseGunState.DISCONNECTED, EmEvseGunState)) return EmEvseMetaState.PLUGGED_IN;
+        if (!this._state) return EmEvseMetaState.IDLE;
+        if (this._state.errors?.length > 0) return EmEvseMetaState.ERROR;
+        if (enumEquals(this._state.outputState, EmEvseOutputState.CHARGING, EmEvseOutputState)) return EmEvseMetaState.CHARGING;
+        if (!enumEquals(this._state.gunState, EmEvseGunState.DISCONNECTED, EmEvseGunState)) return EmEvseMetaState.PLUGGED_IN;
         return EmEvseMetaState.IDLE;
     }
 
-    public getCurrentCharge(): EmEvseCurrentCharge | undefined {
-        return this.currentCharge;
+    public get currentCharge(): EmEvseCurrentCharge | undefined {
+        return this._currentCharge;
     }
 
     public sendDatagram(datagram: Datagram): Promise<number> {
         if (datagram instanceof HeadingResponse) {
-            this.lastActiveLogin = new Date();
+            this._lastActiveLogin = new Date();
             // lastActiveLogin is transient, so no changed event necessary. We need to re-login
             // anyway after an app restart.
         }
@@ -168,20 +168,20 @@ export default class Evse {
     }
 
     public updateIp(ip: string, port: number): boolean {
-        this.lastSeen = new Date();
+        this._lastSeen = new Date();
         let changed = false;
 
         if (this.updateOnlineStatus()) {
             changed = true;
         }
 
-        if (ip !== this.info.ip) {
-            this.info.ip = ip;
+        if (ip !== this._info.ip) {
+            this._info.ip = ip;
             changed = true;
         }
 
-        if (port !== this.info.port) {
-            this.info.port = port;
+        if (port !== this._info.port) {
+            this._info.port = port;
             changed = true;
         }
 
@@ -190,11 +190,11 @@ export default class Evse {
 
     public updateOnlineStatus(): boolean {
         const now = Math.floor(new Date().getTime() / 1000);
-        const lastSeen = this.lastSeen ? Math.floor(this.lastSeen.getTime() / 1000) : 0;
+        const lastSeen = this._lastSeen ? Math.floor(this._lastSeen.getTime() / 1000) : 0;
         const onlineNow = lastSeen > now - this.communicator.config.offlineAfterLastDatagram;
 
-        if (onlineNow !== this.online) {
-            this.online = onlineNow;
+        if (onlineNow !== this._online) {
+            this._online = onlineNow;
             return true;
         }
 
@@ -237,48 +237,48 @@ export default class Evse {
 
     private updateLogin(login: LoginAbstract): boolean {
         // Guard against accidental processing of datagrams from other devices.
-        if (this.info.serial !== login.serial) {
+        if (this._info.serial !== login.serial) {
             return false;
         }
 
-        this.lastSeen = new Date();
+        this._lastSeen = new Date();
         let changed = this.updateOnlineStatus();
 
-        if (this.info.brand !== login.brand) {
-            this.info.brand = login.brand;
+        if (this._info.brand !== login.brand) {
+            this._info.brand = login.brand;
             changed = true;
         }
 
-        if (this.info.model !== login.model) {
-            this.info.model = login.model;
+        if (this._info.model !== login.model) {
+            this._info.model = login.model;
             changed = true;
         }
 
-        if (this.info.hardwareVersion !== login.hardwareVersion) {
-            this.info.hardwareVersion = login.hardwareVersion;
+        if (this._info.hardwareVersion !== login.hardwareVersion) {
+            this._info.hardwareVersion = login.hardwareVersion;
             changed = true;
         }
 
-        if (this.info.maxPower !== login.maxPower) {
-            this.info.maxPower = login.maxPower;
+        if (this._info.maxPower !== login.maxPower) {
+            this._info.maxPower = login.maxPower;
             changed = true;
         }
 
-        if (this.info.maxElectricity !== login.maxElectricity) {
-            this.info.maxElectricity = login.maxElectricity;
+        if (this._info.maxElectricity !== login.maxElectricity) {
+            this._info.maxElectricity = login.maxElectricity;
             changed = true;
         }
 
-        if (this.info.hotLine !== login.hotLine) {
-            this.info.hotLine = login.hotLine;
+        if (this._info.hotLine !== login.hotLine) {
+            this._info.hotLine = login.hotLine;
             changed = true;
         }
 
         const loginType = login.type;
         if (loginType) {
             const phases = [10, 11, 12, 13, 14, 15, 22, 23, 24, 25].includes(loginType) ? Phases.THREE_PHASE : Phases.SINGLE_PHASE;
-            if (this.info.phases !== phases) {
-                this.info.phases = phases;
+            if (this._info.phases !== phases) {
+                this._info.phases = phases;
                 changed = true;
             }
         }
@@ -287,8 +287,8 @@ export default class Evse {
     }
 
     private updateSingleAcStatus(datagram: SingleACStatus): boolean {
-        let changed = this.state === undefined;
-        if (!this.state) this.state = {} as EmEvseState;
+        let changed = this._state === undefined;
+        if (!this._state) this._state = {} as EmEvseState;
 
         const currentPower = datagram.currentPower ?? 0;
 
@@ -296,52 +296,52 @@ export default class Evse {
         if (datagram.l1Voltage && datagram.l2Voltage && datagram.l3Voltage && datagram.l1Electricity && datagram.l2Electricity && datagram.l3Electricity) { // Three phases
             const total = (datagram.l1Voltage * datagram.l1Electricity) + (datagram.l2Voltage * datagram.l2Electricity) + (datagram.l3Voltage * datagram.l3Electricity)
 
-            if (update(this.state, "currentPower", Math.max(total, currentPower))) changed = true;
+            if (update(this._state, "currentPower", Math.max(total, currentPower))) changed = true;
         } else if (datagram.l1Voltage && datagram.l1Electricity) { // Single phase
             const total = (datagram.l1Voltage * datagram.l1Electricity)
-            if (update(this.state, "currentPower", Math.max(total, currentPower))) changed = true;
+            if (update(this._state, "currentPower", Math.max(total, currentPower))) changed = true;
         } else { // No phases?
-            if (update(this.state, "currentPower", currentPower)) changed = true;
+            if (update(this._state, "currentPower", currentPower)) changed = true;
         }
 
-        if (update(this.state, "currentPower", currentPower)) changed = true;
-        if (update(this.state, "currentAmount", datagram.totalKWhCounter)) changed = true;
-        if (update(this.state, "l1Voltage", datagram.l1Voltage)) changed = true;
-        if (update(this.state, "l1Electricity", datagram.l1Electricity)) changed = true;
-        if (update(this.state, "l2Voltage", datagram.l2Voltage)) changed = true;
-        if (update(this.state, "l2Electricity", datagram.l2Electricity)) changed = true;
-        if (update(this.state, "l3Voltage", datagram.l3Voltage)) changed = true;
-        if (update(this.state, "l3Electricity", datagram.l3Electricity)) changed = true;
-        if (update(this.state, "innerTemp", datagram.innerTemp)) changed = true;
-        if (update(this.state, "outerTemp", datagram.outerTemp)) changed = true;
-        if (update(this.state, "currentState", datagram.currentState)) changed = true;
-        if (update(this.state, "gunState", datagram.gunState)) changed = true;
-        if (update(this.state, "outputState", datagram.outputState)) changed = true;
-        if (update(this.state, "errors", datagram.errors)) changed = true;
+        if (update(this._state, "currentPower", currentPower)) changed = true;
+        if (update(this._state, "currentAmount", datagram.totalKWhCounter)) changed = true;
+        if (update(this._state, "l1Voltage", datagram.l1Voltage)) changed = true;
+        if (update(this._state, "l1Electricity", datagram.l1Electricity)) changed = true;
+        if (update(this._state, "l2Voltage", datagram.l2Voltage)) changed = true;
+        if (update(this._state, "l2Electricity", datagram.l2Electricity)) changed = true;
+        if (update(this._state, "l3Voltage", datagram.l3Voltage)) changed = true;
+        if (update(this._state, "l3Electricity", datagram.l3Electricity)) changed = true;
+        if (update(this._state, "innerTemp", datagram.innerTemp)) changed = true;
+        if (update(this._state, "outerTemp", datagram.outerTemp)) changed = true;
+        if (update(this._state, "currentState", datagram.currentState)) changed = true;
+        if (update(this._state, "gunState", datagram.gunState)) changed = true;
+        if (update(this._state, "outputState", datagram.outputState)) changed = true;
+        if (update(this._state, "errors", datagram.errors)) changed = true;
         return changed;
     }
 
     private updateChargingStatus(datagram: SingleACChargingStatus) {
-        let changed = this.currentCharge === undefined;
-        if (!this.currentCharge) this.currentCharge = {} as EmEvseCurrentCharge;
-        if (update(this.currentCharge, "port", datagram.port)) changed = true;
-        if (update(this.currentCharge, "currentState", datagram.currentState)) changed = true;
-        if (update(this.currentCharge, "chargeId", datagram.chargeId)) changed = true;
-        if (update(this.currentCharge, "startType", datagram.startType)) changed = true;
-        if (update(this.currentCharge, "chargeType", datagram.chargeType)) changed = true;
-        if (update(this.currentCharge, "maxDurationMinutes", datagram.maxDurationMinutes)) changed = true;
-        if (update(this.currentCharge, "maxEnergyKWh", datagram.maxEnergyKWh)) changed = true;
-        if (update(this.currentCharge, "reservationDate", datagram.reservationDate)) changed = true;
-        if (update(this.currentCharge, "userId", datagram.userId)) changed = true;
-        if (update(this.currentCharge, "maxElectricity", datagram.maxElectricity)) changed = true;
-        if (update(this.currentCharge, "startDate", datagram.startDate)) changed = true;
-        if (update(this.currentCharge, "durationSeconds", datagram.durationSeconds)) changed = true;
-        if (update(this.currentCharge, "startKWhCounter", datagram.startKWhCounter)) changed = true;
-        if (update(this.currentCharge, "currentKWhCounter", datagram.currentKWhCounter)) changed = true;
-        if (update(this.currentCharge, "chargeKWh", datagram.chargeKWh)) changed = true;
-        if (update(this.currentCharge, "chargePrice", datagram.chargePrice)) changed = true;
-        if (update(this.currentCharge, "feeType", datagram.feeType)) changed = true;
-        if (update(this.currentCharge, "chargeFee", datagram.chargeFee)) changed = true;
+        let changed = this._currentCharge === undefined;
+        if (!this._currentCharge) this._currentCharge = {} as EmEvseCurrentCharge;
+        if (update(this._currentCharge, "port", datagram.port)) changed = true;
+        if (update(this._currentCharge, "currentState", datagram.currentState)) changed = true;
+        if (update(this._currentCharge, "chargeId", datagram.chargeId)) changed = true;
+        if (update(this._currentCharge, "startType", datagram.startType)) changed = true;
+        if (update(this._currentCharge, "chargeType", datagram.chargeType)) changed = true;
+        if (update(this._currentCharge, "maxDurationMinutes", datagram.maxDurationMinutes)) changed = true;
+        if (update(this._currentCharge, "maxEnergyKWh", datagram.maxEnergyKWh)) changed = true;
+        if (update(this._currentCharge, "reservationDate", datagram.reservationDate)) changed = true;
+        if (update(this._currentCharge, "userId", datagram.userId)) changed = true;
+        if (update(this._currentCharge, "maxElectricity", datagram.maxElectricity)) changed = true;
+        if (update(this._currentCharge, "startDate", datagram.startDate)) changed = true;
+        if (update(this._currentCharge, "durationSeconds", datagram.durationSeconds)) changed = true;
+        if (update(this._currentCharge, "startKWhCounter", datagram.startKWhCounter)) changed = true;
+        if (update(this._currentCharge, "currentKWhCounter", datagram.currentKWhCounter)) changed = true;
+        if (update(this._currentCharge, "chargeKWh", datagram.chargeKWh)) changed = true;
+        if (update(this._currentCharge, "chargePrice", datagram.chargePrice)) changed = true;
+        if (update(this._currentCharge, "feeType", datagram.feeType)) changed = true;
+        if (update(this._currentCharge, "chargeFee", datagram.chargeFee)) changed = true;
         return changed;
     }
 
@@ -352,11 +352,11 @@ export default class Evse {
      */
     public serialize(): object {
         return {
-            info: this.info,
-            config: this.config,
-            lastConfigUpdate: this.lastConfigUpdate ? Math.floor(this.lastConfigUpdate.getTime() / 1000) : undefined,
-            lastSeen: this.lastSeen ? Math.floor(this.lastSeen.getTime() / 1000) : undefined,
-            password: encodePassword(this.password)
+            info: this._info,
+            config: this._config,
+            lastConfigUpdate: this._lastConfigUpdate ? Math.floor(this._lastConfigUpdate.getTime() / 1000) : undefined,
+            lastSeen: this._lastSeen ? Math.floor(this._lastSeen.getTime() / 1000) : undefined,
+            password: encodePassword(this._password)
         };
     }
 
@@ -387,7 +387,7 @@ export default class Evse {
             data
         );
 
-        if (typeof data.password === "string") evse.password = decodePassword(data.password);
+        if (typeof data.password === "string") evse._password = decodePassword(data.password);
 
         return evse;
     }
@@ -398,19 +398,19 @@ export default class Evse {
      * @returns True if any fields on this instance were changed, false if no fields were changed.
      */
     public merge(other: Evse): boolean {
-        if (this.info.serial !== other.info.serial) {
+        if (this._info.serial !== other._info.serial) {
             return false;
         }
 
         let changed = false;
 
-        if (other.password && (!this.password || other.password !== this.password)) {
-            this.password = other.password;
+        if (other._password && (!this._password || other._password !== this._password)) {
+            this._password = other._password;
             changed = true;
         }
 
-        if (other.lastSeen && (!this.lastSeen || other.lastSeen > this.lastSeen)) {
-            this.lastSeen = other.lastSeen;
+        if (other._lastSeen && (!this._lastSeen || other._lastSeen > this._lastSeen)) {
+            this._lastSeen = other._lastSeen;
             changed = true;
         }
 
@@ -418,72 +418,72 @@ export default class Evse {
             changed = true;
         }
 
-        if (other.info.ip && (!this.info.ip || other.info.ip !== this.info.ip)) {
-            this.info.ip = other.info.ip;
+        if (other._info.ip && (!this._info.ip || other._info.ip !== this._info.ip)) {
+            this._info.ip = other._info.ip;
             changed = true;
         }
 
-        if (other.info.port && (!this.info.port || other.info.port !== this.info.port)) {
-            this.info.port = other.info.port;
+        if (other._info.port && (!this._info.port || other._info.port !== this._info.port)) {
+            this._info.port = other._info.port;
             changed = true;
         }
 
-        if (other.info.brand && (!this.info.brand || other.info.brand !== this.info.brand)) {
-            this.info.brand = other.info.brand;
+        if (other._info.brand && (!this._info.brand || other._info.brand !== this._info.brand)) {
+            this._info.brand = other._info.brand;
             changed = true;
         }
 
-        if (other.info.model && (!this.info.model || other.info.model !== this.info.model)) {
-            this.info.model = other.info.model;
+        if (other._info.model && (!this._info.model || other._info.model !== this._info.model)) {
+            this._info.model = other._info.model;
             changed = true;
         }
 
-        if (other.info.hardwareVersion && (!this.info.hardwareVersion || other.info.hardwareVersion !== this.info.hardwareVersion)) {
-            this.info.hardwareVersion = other.info.hardwareVersion;
+        if (other._info.hardwareVersion && (!this._info.hardwareVersion || other._info.hardwareVersion !== this._info.hardwareVersion)) {
+            this._info.hardwareVersion = other._info.hardwareVersion;
             changed = true;
         }
 
-        if (other.info.softwareVersion && (!this.info.softwareVersion || other.info.softwareVersion !== this.info.softwareVersion)) {
-            this.info.softwareVersion = other.info.softwareVersion;
+        if (other._info.softwareVersion && (!this._info.softwareVersion || other._info.softwareVersion !== this._info.softwareVersion)) {
+            this._info.softwareVersion = other._info.softwareVersion;
             changed = true;
         }
 
-        if (other.info.hotLine && (!this.info.hotLine || other.info.hotLine !== this.info.hotLine)) {
-            this.info.hotLine = other.info.hotLine;
+        if (other._info.hotLine && (!this._info.hotLine || other._info.hotLine !== this._info.hotLine)) {
+            this._info.hotLine = other._info.hotLine;
             changed = true;
         }
 
-        if (other.info.maxPower && (!this.info.maxPower || other.info.maxPower !== this.info.maxPower)) {
-            this.info.maxPower = other.info.maxPower;
+        if (other._info.maxPower && (!this._info.maxPower || other._info.maxPower !== this._info.maxPower)) {
+            this._info.maxPower = other._info.maxPower;
             changed = true;
         }
 
-        if (other.info.maxElectricity && (!this.info.maxElectricity || other.info.maxElectricity !== this.info.maxElectricity)) {
-            this.info.maxElectricity = other.info.maxElectricity;
+        if (other._info.maxElectricity && (!this._info.maxElectricity || other._info.maxElectricity !== this._info.maxElectricity)) {
+            this._info.maxElectricity = other._info.maxElectricity;
             changed = true;
         }
 
-        if (other.info.feature !== undefined && other.info.feature !== this.info.feature) {
-            this.info.feature = other.info.feature;
+        if (other._info.feature !== undefined && other._info.feature !== this._info.feature) {
+            this._info.feature = other._info.feature;
             changed = true;
         }
 
-        if (other.info.supportNew !== undefined && other.info.supportNew !== this.info.supportNew) {
-            this.info.supportNew = other.info.supportNew;
+        if (other._info.supportNew !== undefined && other._info.supportNew !== this._info.supportNew) {
+            this._info.supportNew = other._info.supportNew;
             changed = true;
         }
 
-        if (other.info.phases !== undefined && other.info.phases !== this.info.phases) {
-            this.info.phases = other.info.phases;
+        if (other._info.phases !== undefined && other._info.phases !== this._info.phases) {
+            this._info.phases = other._info.phases;
             changed = true;
         }
 
-        if (other.config.name && (!this.config.name || other.config.name !== this.config.name)) {
-            this.config.name = other.config.name;
+        if (other._config.name && (!this._config.name || other._config.name !== this._config.name)) {
+            this._config.name = other._config.name;
             changed = true;
         }
 
-        this.config = { ... this.config, ...other.config };
+        this._config = { ... this._config, ...other._config };
 
         return changed;
     }
@@ -493,7 +493,7 @@ export default class Evse {
         return new Promise((resolve, reject) => {
             let timeout: NodeJS.Timeout;
             const listener = (evse: Evse, event: EmEvseEvent, datagram?: Datagram) => {
-                if (datagram && evse.info.serial === this.info.serial && command.includes(datagram.getCommand())) {
+                if (datagram && evse._info.serial === this._info.serial && command.includes(datagram.getCommand())) {
                     clearTimeout(timeout);
                     this.communicator.removeEventListener("datagram", listener);
                     resolve(datagram);
@@ -522,17 +522,17 @@ export default class Evse {
             throw new Error("Invalid password");
         }
         // 3. If we get the LoginResponse then the password was correct, so set it on this instance.
-        if (password !== undefined && this.password !== password) {
-            this.password = password;
+        if (password !== undefined && this._password !== password) {
+            this._password = password;
             this.dispatchEvent("changed", response);
         }
         // 4. Send the LoginConfirm, completing the login flow. After this the EVSE can take commands.
         await this.sendDatagram(new LoginConfirm().setPassword(password));
         // 5. Mark this evse as having an active session.
-        this.lastActiveLogin = new Date();
+        this._lastActiveLogin = new Date();
         // 6. Request EVSE's configuration. We don't need to wait for this; the login is complete.
         this.fetchConfig().catch(error => {
-            logError(`Failed to get configuration for ${this.info.serial} after login: ${error.message}`);
+            logError(`Failed to get configuration for ${this._info.serial} after login: ${error.message}`);
         });
     }
 
@@ -546,14 +546,14 @@ export default class Evse {
      */
     public async fetchConfig(orCachedUntilSeconds: number = 5): Promise<EmEvseConfig> {
         // If we're already busy getting the configuration, then recycle that promise.
-        if (this.configUpdatePromise === undefined) {
-            if (this.lastConfigUpdate && this.lastConfigUpdate.getTime() > (Date.now() - (orCachedUntilSeconds * 1000))) {
-                return this.config;
+        if (this._configUpdatePromise === undefined) {
+            if (this._lastConfigUpdate && this._lastConfigUpdate.getTime() > (Date.now() - (orCachedUntilSeconds * 1000))) {
+                return this._config;
             }
             // Set up the receivers for the configuration datagrams. We do this before sending out the
             // requests to avoid missing any responses for earlier requests while we're still busy
             // sending out the later requests.
-            this.configUpdatePromise = Promise.all([
+            this._configUpdatePromise = Promise.all([
                 this.waitForResponse(SetAndGetNickNameResponse.COMMAND, 6000),
                 this.waitForResponse(SetAndGetLanguageResponse.COMMAND, 6000),
                 this.waitForResponse(SetAndGetOffLineChargeResponse.COMMAND, 6000),
@@ -575,35 +575,35 @@ export default class Evse {
         // Wait until all responses are in. If some responses are lost, this composite promise will fail
         // due to one of the underlying promises timing out.
         try {
-            await this.configUpdatePromise;
+            await this._configUpdatePromise;
         } finally {
-            this.configUpdatePromise = undefined;
+            this._configUpdatePromise = undefined;
         }
 
         // If we get here then all configuration was received (and EVSE changed events were sent). We
         // only mark the time that configuration was last updated, so we can know later on if we need
         // to refresh.
-        this.lastConfigUpdate = new Date();
+        this._lastConfigUpdate = new Date();
         this.dispatchEvent("changed");
-        return this.config;
+        return this._config;
     }
 
     public setDatagramPassword(datagram: Datagram) {
-        if (this.password !== undefined) {
-            datagram.setPassword(this.password);
+        if (this._password !== undefined) {
+            datagram.setPassword(this._password);
             return true;
         }
         return false;
     }
 
     public toString(): string {
-        const model = [this.info.brand, this.info.model].filter(Boolean).join(" ");
-        return `[${this.info.serial}${model ? " " + model : ""} @ ${this.info.ip} ${EmEvseMetaState[this.getMetaState()]}]`;
+        const model = [this._info.brand, this._info.model].filter(Boolean).join(" ");
+        return `[${this._info.serial}${model ? " " + model : ""} @ ${this._info.ip} ${EmEvseMetaState[this.metaState]}]`;
     }
 
     private updateOfflineCharging(datagram: SetAndGetOffLineChargeResponse) {
-        if (this.config.offLineCharge !== datagram.status) {
-            this.config.offLineCharge = datagram.status;
+        if (this._config.offLineCharge !== datagram.status) {
+            this._config.offLineCharge = datagram.status;
             return true;
         }
         return false;
@@ -611,8 +611,8 @@ export default class Evse {
 
     private updateNickName(datagram: SetAndGetNickNameResponse) {
         if (!datagram.nickName) return false;
-        if (datagram.nickName !== this.config.name) {
-            this.config.name = datagram.nickName;
+        if (datagram.nickName !== this._config.name) {
+            this._config.name = datagram.nickName;
             return true;
         }
         return false;
@@ -620,8 +620,8 @@ export default class Evse {
 
     private updateTemperatureUnit(datagram: SetAndGetTemperatureUnitResponse) {
         if (!datagram.temperatureUnit) return false;
-        if (datagram.temperatureUnit !== this.config.temperatureUnit) {
-            this.config.temperatureUnit = datagram.temperatureUnit;
+        if (datagram.temperatureUnit !== this._config.temperatureUnit) {
+            this._config.temperatureUnit = datagram.temperatureUnit;
             return true;
         }
         return false;
@@ -629,8 +629,8 @@ export default class Evse {
 
     private updateLanguage(datagram: SetAndGetLanguageResponse): boolean {
         if (!datagram.language) return false;
-        if (datagram.language !== this.config.language) {
-            this.config.language = datagram.language;
+        if (datagram.language !== this._config.language) {
+            this._config.language = datagram.language;
             return true;
         }
         return false;
@@ -639,23 +639,23 @@ export default class Evse {
     private updateVersion(datagram: GetVersionResponse) {
         let changed = false;
 
-        if (datagram.hardwareVersion && datagram.hardwareVersion !== this.info.hardwareVersion) {
-            this.info.hardwareVersion = datagram.hardwareVersion;
+        if (datagram.hardwareVersion && datagram.hardwareVersion !== this._info.hardwareVersion) {
+            this._info.hardwareVersion = datagram.hardwareVersion;
             changed = true;
         }
 
-        if (datagram.softwareVersion && datagram.softwareVersion !== this.info.softwareVersion) {
-            this.info.softwareVersion = datagram.softwareVersion;
+        if (datagram.softwareVersion && datagram.softwareVersion !== this._info.softwareVersion) {
+            this._info.softwareVersion = datagram.softwareVersion;
             changed = true;
         }
 
-        if (datagram.feature !== undefined && datagram.feature !== this.info.feature) {
-            this.info.feature = datagram.feature;
+        if (datagram.feature !== undefined && datagram.feature !== this._info.feature) {
+            this._info.feature = datagram.feature;
             changed = true;
         }
 
-        if (datagram.supportNew !== undefined && datagram.supportNew !== this.info.supportNew) {
-            this.info.supportNew = datagram.supportNew;
+        if (datagram.supportNew !== undefined && datagram.supportNew !== this._info.supportNew) {
+            this._info.supportNew = datagram.supportNew;
             changed = true;
         }
 
@@ -663,8 +663,8 @@ export default class Evse {
     }
 
     private updateOutputElectricity(datagram: SetAndGetOutputElectricityResponse) {
-        if (datagram.getElectricity() !== this.config.maxElectricity) {
-            this.config.maxElectricity = datagram.getElectricity();
+        if (datagram.electricity !== this._config.maxElectricity) {
+            this._config.maxElectricity = datagram.electricity;
             return true;
         }
         return false;
@@ -673,7 +673,7 @@ export default class Evse {
 
     private updatePasswordError(datagram: PasswordErrorResponse) {
         const wasLoggedIn = this.isLoggedIn();
-        this.lastActiveLogin = undefined;
+        this._lastActiveLogin = undefined;
         if (wasLoggedIn && !this.isLoggedIn()) {
             this.dispatchEvent("changed", datagram);
             return true;
@@ -684,48 +684,48 @@ export default class Evse {
     public async setName(name: string): Promise<void> {
         await this.sendDatagram(new SetAndGetNickName().setAction(SetAndGetNickNameAction.SET).setNickName("ACP#" + name));
         const response = await this.waitForResponse(SetAndGetNickNameResponse.COMMAND, 5000) as SetAndGetNickNameResponse;
-        if (response.getNickName() !== name) {
-            throw new Error(`Failed to set name '${name}': EVSE reported back name '${response.getNickName()}'`);
+        if (response.nickName !== name) {
+            throw new Error(`Failed to set name '${name}': EVSE reported back name '${response.nickName}'`);
         }
-        this.config.name = name;
+        this._config.name = name;
         this.dispatchEvent("changed", response);
     }
 
     public async setOffLineCharge(status: OffLineChargeStatus): Promise<void> {
         await this.sendDatagram(new SetAndGetOffLineCharge().setAction(OffLineChargeAction.SET).setStatus(status));
         const response = await this.waitForResponse(SetAndGetOffLineChargeResponse.COMMAND, 5000) as SetAndGetOffLineChargeResponse;
-        if (response.getStatus() != status) {
-            throw new Error(`Failed to set offlineCharge to ${status}: EVSE reported back status ${response.getStatus()}`);
+        if (response.status != status) {
+            throw new Error(`Failed to set offlineCharge to ${status}: EVSE reported back status ${response.status}`);
         }
-        this.config.offLineCharge = status;
+        this._config.offLineCharge = status;
         this.dispatchEvent("changed", response);
     }
 
     public async setTemperatureUnit(unit: TemperatureUnit): Promise<void> {
         await this.sendDatagram(new SetAndGetTemperatureUnit().setAction(SetAndGetTemperatureUnitAction.SET).setTemperatureUnit(unit));
         const response = await this.waitForResponse(SetAndGetTemperatureUnitResponse.COMMAND, 5000) as SetAndGetTemperatureUnitResponse;
-        if (response.getTemperatureUnit() !== unit) {
-            throw new Error(`Failed to set temperature unit to ${unit}: EVSE reported back unit ${response.getTemperatureUnit()}`);
+        if (response.temperatureUnit !== unit) {
+            throw new Error(`Failed to set temperature unit to ${unit}: EVSE reported back unit ${response.temperatureUnit}`);
         }
-        this.config.temperatureUnit = unit;
+        this._config.temperatureUnit = unit;
         this.dispatchEvent("changed", response);
     }
 
     public async setLanguage(language: Language): Promise<void> {
         await this.sendDatagram(new SetAndGetLanguage().setAction(SetAndGetLanguageAction.SET).setLanguage(language));
         const response = await this.waitForResponse(SetAndGetLanguageResponse.COMMAND, 5000) as SetAndGetLanguageResponse;
-        if (response.getLanguage() !== language) {
-            throw new Error(`Failed to set language to ${language}: EVSE reported back language ${response.getLanguage()}`);
+        if (response.language !== language) {
+            throw new Error(`Failed to set language to ${language}: EVSE reported back language ${response.language}`);
         }
-        this.config.language = language;
+        this._config.language = language;
         this.dispatchEvent("changed", response);
     }
 
     public async setMaxElectricity(amps: number): Promise<void> {
         await this.sendDatagram(new SetAndGetOutputElectricity().setAction(SetAndGetOutputElectricityAction.SET).setElectricity(amps));
         const response = await this.waitForResponse(SetAndGetOutputElectricityResponse.COMMAND, 5000) as SetAndGetOutputElectricityResponse;
-        if (response.getElectricity() !== amps) {
-            throw new Error(`Failed to set output electricity to ${amps}: EVSE reported back ${response.getElectricity()}`);
+        if (response.electricity !== amps) {
+            throw new Error(`Failed to set output electricity to ${amps}: EVSE reported back ${response.electricity}`);
         }
         this.dispatchEvent("changed", response);
     }
@@ -733,7 +733,7 @@ export default class Evse {
     public async fetchSystemTime(): Promise<Date | undefined> {
         await this.sendDatagram(new SetAndGetSystemTime().setAction(SystemTimeAction.GET));
         const response = await this.waitForResponse(SetAndGetSystemTimeResponse.COMMAND, 5000) as SetAndGetSystemTimeResponse;
-        return response.getTime();
+        return response.time;
     }
 
     public async setSystemTime(time?: Date): Promise<void> {
@@ -744,35 +744,35 @@ export default class Evse {
 
         const response = await this.waitForResponse(SetAndGetSystemTimeResponse.COMMAND, 5000) as SetAndGetSystemTimeResponse;
 
-        const responseTime = response.getTime();
+        const responseTime = response.time;
         if (!responseTime) {
             throw new Error('Response does not have a time');
         }
 
-        const datagramTime = datagram.getTime();
+        const datagramTime = datagram.time;
         if (!datagramTime) {
             throw new Error('Datagram time is undefined');
         }
 
         // Require the set date and the returned date to be within 2 seconds of each other.
         if (Math.abs(responseTime.getTime() - datagramTime.getTime()) > 2000) {
-            throw new Error(`Failed to set system time to ${datagram.getTime()}: EVSE reported back ${response.getTime()}`);
+            throw new Error(`Failed to set system time to ${datagram.time}: EVSE reported back ${response.time}`);
         }
     }
 
     public async chargeStart(params: ChargeStartParams = {}): Promise<ChargeStartResult> {
-        const maxAmps = params.maxAmps || this.config.maxElectricity;
+        const maxAmps = params.maxAmps || this._config.maxElectricity;
         if (!maxAmps) {
             throw new Error("No maxAmps value specified for chargeStart, and none available from configuration.");
         } else {
-            const evseMaxAmps = this.getInfo().maxElectricity || 32;
+            const evseMaxAmps = this.info.maxElectricity || 32;
             if (maxAmps < 6 || maxAmps > evseMaxAmps) {
                 throw new Error(`Invalid maxAmps value ${maxAmps} specified for chargeStart; valid range is 6-${evseMaxAmps}A`);
             }
         }
 
         const chargeStart = new ChargeStart()
-            .setLineId(params.singlePhase || this.info.phases !== Phases.THREE_PHASE ? 1 : 2)
+            .setLineId(params.singlePhase || this._info.phases !== Phases.THREE_PHASE ? 1 : 2)
             .setUserId(params.userId)
             .setChargeId(params.chargeId)
             .setReservationDate(params.startAt)
@@ -782,26 +782,26 @@ export default class Evse {
         await this.sendDatagram(chargeStart);
         const response = await this.waitForResponse(ChargeStartResponse.COMMAND, 5000) as ChargeStartResponse;
 
-        const result = response.getReservationResult();
+        const result = response.reservationResult;
 
 
-        if (response.getErrorReason() || !result || !successReservationResults.includes(result)) {
+        if (response.errorReason || !result || !successReservationResults.includes(result)) {
             throw new ChargeStartError(response);
         }
 
         // If a different maxAmps was requested than the currently configured value, then update the configuration.
         // Don't fail the chargeStart if this config write fails because charging has started; just log any error.
-        if (maxAmps !== this.config.maxElectricity) {
+        if (maxAmps !== this._config.maxElectricity) {
             this.setMaxElectricity(maxAmps).catch(error => {
-                logError(`Failed to change maxElectricity config to ${maxAmps}A after successful chargeStart for EVSE ${this.info.serial}: ${error.message}. The EVSE will still have the old configured value for subsequent charges that don't explicitly set maxAmps, and for other apps.`);
+                logError(`Failed to change maxElectricity config to ${maxAmps}A after successful chargeStart for EVSE ${this._info.serial}: ${error.message}. The EVSE will still have the old configured value for subsequent charges that don't explicitly set maxAmps, and for other apps.`);
             });
         }
 
         return {
             reservationResult: result,
-            startResult: response.getStartResult(),
-            errorReason: response.getErrorReason(),
-            maxElectricity: response.getMaxElectricity()
+            startResult: response.startResult,
+            errorReason: response.errorReason,
+            maxElectricity: response.maxElectricity
         };
     }
 
