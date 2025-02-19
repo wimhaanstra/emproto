@@ -1,6 +1,6 @@
 {
-  "name": "emproto",
-  "version": "1.0.0-alpha",
+  "name": "sorted-emproto",
+  "version": "1.0.0",
   "description": "EM Protocol Handler",
   "main": "dist/index.js",
   "type": "module",
@@ -18,7 +18,7 @@
     "clitest": "npx tsx clitest/index.ts"
   },
   "build": "tsc",
-  "author": "johnwoo-nl",
+  "author": "wimhaansta",
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {
