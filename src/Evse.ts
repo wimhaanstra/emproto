@@ -160,7 +160,7 @@ export default class Evse {
         return this._currentCharge;
     }
 
-    public sendDatagram(datagram: Datagram): Promise<number> {
+    public sendDatagram = async (datagram: Datagram): Promise<number> => {
         if (datagram instanceof HeadingResponse) {
             this._lastActiveLogin = new Date();
             // lastActiveLogin is transient, so no changed event necessary. We need to re-login
@@ -175,6 +175,8 @@ export default class Evse {
             if (this.onError) {
                 this.onError(command);
             }
+
+            return 0;
         }
     }
 

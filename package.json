@@ -1,6 +1,6 @@
 {
   "name": "sorted-emproto",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "EM Protocol Handler",
   "main": "dist/index.js",
   "type": "module",
@@ -10,8 +10,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "rm -rf ./dist && tsc",
-    "build-ts": "tsup",
+    "build": "tsup",
     "test": "npx jest",
     "lint": "eslint .",
     "clean": "rm -rf ./dist",
