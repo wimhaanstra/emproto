@@ -71,6 +71,8 @@ export default class Evse {
     private _currentCharge?: EmEvseCurrentCharge;
     private _configUpdatePromise?: Promise<any>;
 
+    public onError?: (command?: number) => void;
+
     constructor(communicator: Communicator,
         dispatchEvent: DispatchEvent,
         info: EmEvseInfo | { info: object, config?: object, lastSeen?: Date | number | string, lastConfigUpdate?: Date | number | string }) {
@@ -164,7 +166,16 @@ export default class Evse {
             // lastActiveLogin is transient, so no changed event necessary. We need to re-login
             // anyway after an app restart.
         }
-        return this.communicator.send(datagram, this);
+
+        try {
+            return this.communicator.send(datagram, this);
+        } catch (error) {
+            const command = datagram.getCommand();
+
+            if (this.onError) {
+                this.onError(command);
+            }
+        }
     }
 
     public updateIp(ip: string, port: number): boolean {
