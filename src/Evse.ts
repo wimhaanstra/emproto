@@ -71,7 +71,7 @@ export default class Evse {
     private _currentCharge?: EmEvseCurrentCharge;
     private _configUpdatePromise?: Promise<any>;
 
-    public onError?: (command?: number) => void;
+    public onError?: (command?: number, message?: string) => void;
 
     constructor(communicator: Communicator,
         dispatchEvent: DispatchEvent,

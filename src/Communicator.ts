@@ -57,49 +57,7 @@ export class Communicator {
                 }
             });
 
-            this.socket.on("message", (buffer: Buffer, rinfo: RemoteInfo) => {
-                try {
-                    if (this.config.dumpDatagrams) {
-                        const cmd = buffer.length >= 21 ? buffer.readUInt16BE(19) : 0;
-                        dumpDebug(`<- IN: buffer with command ${cmd} [${buffer.toString("hex")}]`);
-                    }
-
-                    const datagrams = parseDatagrams(buffer);
-
-                    datagrams.forEach(datagram => {
-                        if (this.config.dumpDatagrams) {
-                            dumpDebug(`<- IN: ${datagram.toString()}`);
-                        }
-
-                        const evse = this.updateEvse(datagram, rinfo);
-                        if (evse) {
-                            this.dispatchEvent("datagram", evse, datagram);
-
-                            if (datagram instanceof Login) {
-                                // If we are not logged in now (evse's lastHeadingResponse is too long ago), and we have
-                                // a password, then we can log in.
-                                if (!evse.isLoggedIn() && evse.hasPassword()) {
-                                    evse.login().then();
-                                }
-                            }
-                            if (datagram instanceof Heading) {
-                                // The Heading datagram is sent by the EVSE (explicitly to us - this is not a broadcast)
-                                // every 10 seconds when we are logged in, and seems to keep our session alive. If we didn't
-                                // get a Heading datagram for a while, we are logged out, and we should log in again by sending
-                                // a RequestLogin datagram. We always respond with a HeadingResponse datagram to keep our
-                                // session alive, and in the evse instance we keep track of the last time we sent such a
-                                // HeadingResponse. We check periodically if that is too long ago, and log in again.
-                                evse.sendDatagram(new HeadingResponse()).then();
-                            }
-                            if (datagram instanceof SingleACStatus) {
-                                evse.sendDatagram(new SingleACStatusResponse()).then();
-                            }
-                        }
-                    });
-                } catch (error: any) {
-                    logError(`${error.message}\n${error.stack}`);
-                }
-            });
+            this.socket.on("message", this.handleMessage);
 
             this.socket.bind(this.config.port, () => {
                 if (!this.socket) {
@@ -179,6 +137,50 @@ export class Communicator {
         }
 
         return loadedEvses;
+    }
+
+    private handleMessage = (buffer: Buffer, rinfo: RemoteInfo) => {
+        try {
+            if (this.config.dumpDatagrams) {
+                const cmd = buffer.length >= 21 ? buffer.readUInt16BE(19) : 0;
+                dumpDebug(`<- IN: buffer with command ${cmd} [${buffer.toString("hex")}]`);
+            }
+
+            const datagrams = parseDatagrams(buffer);
+
+            datagrams.forEach(datagram => {
+                if (this.config.dumpDatagrams) {
+                    dumpDebug(`<- IN: ${datagram.toString()}`);
+                }
+
+                const evse = this.updateEvse(datagram, rinfo);
+                if (evse) {
+                    this.dispatchEvent("datagram", evse, datagram);
+
+                    if (datagram instanceof Login) {
+                        // If we are not logged in now (evse's lastHeadingResponse is too long ago), and we have
+                        // a password, then we can log in.
+                        if (!evse.isLoggedIn() && evse.hasPassword()) {
+                            evse.login().then();
+                        }
+                    }
+                    if (datagram instanceof Heading) {
+                        // The Heading datagram is sent by the EVSE (explicitly to us - this is not a broadcast)
+                        // every 10 seconds when we are logged in, and seems to keep our session alive. If we didn't
+                        // get a Heading datagram for a while, we are logged out, and we should log in again by sending
+                        // a RequestLogin datagram. We always respond with a HeadingResponse datagram to keep our
+                        // session alive, and in the evse instance we keep track of the last time we sent such a
+                        // HeadingResponse. We check periodically if that is too long ago, and log in again.
+                        evse.sendDatagram(new HeadingResponse()).then();
+                    }
+                    if (datagram instanceof SingleACStatus) {
+                        evse.sendDatagram(new SingleACStatusResponse()).then();
+                    }
+                }
+            });
+        } catch (error: any) {
+            logError(`${error.message}\n${error.stack}`);
+        }
     }
 
     /**
